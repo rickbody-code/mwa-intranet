@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  image     String?
+  role      Role     @default(STAFF)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id])
+  pinned    Boolean  @default(false)
+}
+
+model QuickLink {
+  id        String   @id @default(cuid())
+  label     String
+  url       String
+  createdAt DateTime @default(now())
+  createdBy String?
+}
+
+model Staff {
+  id        String   @id @default(cuid())
+  name      String
+  title     String
+  email     String   @unique
+  phone     String?
+  location  String?
+  department String?
+  image     String?
+  createdAt DateTime @default(now())
+}
