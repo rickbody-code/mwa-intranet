@@ -55,11 +55,12 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_584F1250D45A48ACB771A9E5D0BEDE22 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_190E921A167A4C30A5F6337280BCA24A }}
 
-      - name: 'Deploy to Azure Web App'
-        id: deploy-to-webapp
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'mwa-intranet'
-          slot-name: 'Production'
+          app-name: mwa-intranet   # <-- must match the App Service name in Azure
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
           package: .
+
+
           
