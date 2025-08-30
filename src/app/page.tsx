@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { prisma } from "@/lib/prisma";
 import { AnnouncementList } from "@/components/AnnouncementList";
 import { QuickLinks } from "@/components/QuickLinks";
