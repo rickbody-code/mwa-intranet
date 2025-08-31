@@ -3,14 +3,14 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start -p $PORT",
-    "postinstall": "npx prisma generate",
-    "prisma:studio": "prisma studio",
-    "db:migrate": "prisma migrate dev",
-    "db:seed": "node --import tsx src/scripts/seed.ts"
-  },
+  "dev": "next dev",
+  "build": "next build",
+  "start": "next start -p $PORT",
+  "postinstall": "npx prisma generate",
+  "prisma:studio": "prisma studio",
+  "db:migrate": "prisma migrate dev",
+  "db:seed": "node --import tsx src/scripts/seed.ts"
+},
   "dependencies": {
     "@prisma/client": "^5.18.0",
     "autoprefixer": "^10.4.20",
