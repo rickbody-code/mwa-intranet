@@ -1,49 +1,62 @@
-// src/app/admin/page.tsx (Updated)
+// src/app/admin/page.tsx (Integrated Version)
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 import { prisma } from "@/lib/prisma";
 import { HierarchicalLinksAdmin } from "@/components/HierarchicalLinksAdmin";
+import { MarsdenAppsAdmin } from "@/components/MarsdenAppsAdmin";
 
 export default async function AdminPage() {
-  const categories = await prisma.linkCategory.findMany({
-    include: {
-      links: {
-        orderBy: [{ order: "asc" }, { title: "asc" }]
-      },
-      subCategories: {
-        include: {
-          links: {
-            orderBy: [{ order: "asc" }, { title: "asc" }]
-          },
-          subSubCategories: {
-            include: {
-              links: {
-                orderBy: [{ order: "asc" }, { title: "asc" }]
-              }
-            },
-            orderBy: [{ order: "asc" }, { name: "asc" }]
-          }
+  // Fetch both hierarchical data AND marsden apps
+  const [categories, marsdenApps] = await Promise.all([
+    prisma.linkCategory.findMany({
+      include: {
+        links: {
+          orderBy: [{ order: "asc" }, { title: "asc" }]
         },
-        orderBy: [{ order: "asc" }, { name: "asc" }]
-      }
-    },
-    orderBy: [{ order: "asc" }, { name: "asc" }]
-  });
+        subCategories: {
+          include: {
+            links: {
+              orderBy: [{ order: "asc" }, { title: "asc" }]
+            },
+            subSubCategories: {
+              include: {
+                links: {
+                  orderBy: [{ order: "asc" }, { title: "asc" }]
+                }
+              },
+              orderBy: [{ order: "asc" }, { name: "asc" }]
+            }
+          },
+          orderBy: [{ order: "asc" }, { name: "asc" }]
+        }
+      },
+      orderBy: [{ order: "asc" }, { name: "asc" }]
+    }),
+    prisma.marsdenApp.findMany({ orderBy: { order: "asc" } })
+  ]);
 
   return (
     <div className="space-y-8">
+      {/* NEW: Marsden Apps Admin Section */}
+      <section className="card">
+        <h1 className="h1 mb-4">Admin · Manage Marsden Wealth Apps</h1>
+        <p className="text-gray-600 mb-6">Create and manage your internal app shortcuts with custom icons and descriptions.</p>
+        <MarsdenAppsAdmin initialApps={marsdenApps} />
+      </section>
+
+      {/* EXISTING: Your Business Systems Management */}
       <section className="card">
         <h1 className="h1 mb-4">Admin · Business Systems Management</h1>
         <p className="text-gray-600 mb-6">
           Organize your business links into a hierarchical structure. 
           Categories → Subcategories → Sub-subcategories → Links
         </p>
-        <HierarchicalLinksAdmin initialCategories={categories} />
+        <HierarchicalLinksAdmin initialData={categories} />
       </section>
 
-      {/* Migration Helper */}
+      {/* EXISTING: Your Migration Helper */}
       <section className="card bg-blue-50 border-blue-200">
-        <h2 className="h2 mb-4">🔄 Migration Status</h2>
+        <h2 className="h2 mb-4">📄 Migration Status</h2>
         <p className="text-sm text-blue-800 mb-4">
           The new hierarchical link system is ready. Your existing Quick Links can be migrated 
           to the appropriate categories when you're ready.

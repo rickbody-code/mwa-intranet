@@ -1,19 +1,17 @@
 "use client";
-import { useState } from "react";
-import { Plus, Trash2, Save, X, Edit, ChevronRight, ChevronDown, Folder, FolderOpen, ExternalLink } from "lucide-react";
+import { useState, useEffect } from "react";
 
 type Link = {
   id: string;
   title: string;
   url: string;
   description?: string;
-  order: number;
+  subSubCategoryId?: string;
 };
 
 type LinkSubSubCategory = {
   id: string;
   name: string;
-  description?: string;
   order: number;
   links: Link[];
 };
@@ -21,7 +19,6 @@ type LinkSubSubCategory = {
 type LinkSubCategory = {
   id: string;
   name: string;
-  description?: string;
   order: number;
   links: Link[];
   subSubCategories: LinkSubSubCategory[];
@@ -30,50 +27,45 @@ type LinkSubCategory = {
 type LinkCategory = {
   id: string;
   name: string;
-  description?: string;
   order: number;
   links: Link[];
   subCategories: LinkSubCategory[];
 };
 
-export function HierarchicalLinksAdmin({ initialCategories }: { initialCategories: LinkCategory[] }) {
-  const [categories, setCategories] = useState<LinkCategory[]>(initialCategories || []);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-  const [expandedSubCategories, setExpandedSubCategories] = useState<Set<string>>(new Set());
+export function HierarchicalLinksAdmin({ initialData }: { initialData: LinkCategory[] }) {
+  const [data, setData] = useState<LinkCategory[]>(initialData || []);
   
   // Form states
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [addingSubCategoryTo, setAddingSubCategoryTo] = useState<string | null>(null);
-  const [addingLinkTo, setAddingLinkTo] = useState<{ type: 'category' | 'subCategory' | 'subSubCategory'; id: string } | null>(null);
+  const [addingSubSubCategoryTo, setAddingSubSubCategoryTo] = useState<string | null>(null);
+  const [addingLinkTo, setAddingLinkTo] = useState<{ type: string; id: string } | null>(null);
+  
+  // Edit states
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [editingSubCategory, setEditingSubCategory] = useState<string | null>(null);
+  const [editingSubSubCategory, setEditingSubSubCategory] = useState<string | null>(null);
   const [editingLink, setEditingLink] = useState<string | null>(null);
   
+  // Form inputs
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newSubCategoryName, setNewSubCategoryName] = useState("");
-  const [newLink, setNewLink] = useState({ title: "", url: "", description: "" });
-  const [editLink, setEditLink] = useState({ title: "", url: "", description: "" });
+  const [newSubSubCategoryName, setNewSubSubCategoryName] = useState("");
+  const [newLinkTitle, setNewLinkTitle] = useState("");
+  const [newLinkUrl, setNewLinkUrl] = useState("");
+  const [newLinkDescription, setNewLinkDescription] = useState("");
+  
+  // Edit form inputs
+  const [editName, setEditName] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editUrl, setEditUrl] = useState("");
+  const [editDescription, setEditDescription] = useState("");
 
-  // Toggle functions
-  const toggleCategory = (id: string) => {
-    const newExpanded = new Set(expandedCategories);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedCategories(newExpanded);
-  };
+  useEffect(() => {
+    setData(initialData || []);
+  }, [initialData]);
 
-  const toggleSubCategory = (id: string) => {
-    const newExpanded = new Set(expandedSubCategories);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedSubCategories(newExpanded);
-  };
-
-  // API functions
+  // CREATE FUNCTIONS
   const createCategory = async () => {
     if (!newCategoryName.trim()) return;
     
@@ -86,12 +78,12 @@ export function HierarchicalLinksAdmin({ initialCategories }: { initialCategorie
       
       if (res.ok) {
         const newCategory = await res.json();
-        setCategories([...categories, { ...newCategory, links: [], subCategories: [] }]);
+        setData([...data, { ...newCategory, links: [], subCategories: [] }]);
         setNewCategoryName("");
         setIsAddingCategory(false);
       }
     } catch (error) {
-      console.error("Failed to create category:", error);
+      console.error("Error creating category:", error);
     }
   };
 
@@ -102,12 +94,15 @@ export function HierarchicalLinksAdmin({ initialCategories }: { initialCategorie
       const res = await fetch("/api/links/subcategories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newSubCategoryName.trim(), categoryId }),
+        body: JSON.stringify({ 
+          name: newSubCategoryName.trim(),
+          categoryId 
+        }),
       });
       
       if (res.ok) {
         const newSubCategory = await res.json();
-        setCategories(categories.map(cat => 
+        setData(data.map(cat => 
           cat.id === categoryId 
             ? { ...cat, subCategories: [...cat.subCategories, { ...newSubCategory, links: [], subSubCategories: [] }] }
             : cat
@@ -116,110 +111,299 @@ export function HierarchicalLinksAdmin({ initialCategories }: { initialCategorie
         setAddingSubCategoryTo(null);
       }
     } catch (error) {
-      console.error("Failed to create subcategory:", error);
+      console.error("Error creating subcategory:", error);
+    }
+  };
+
+  const createSubSubCategory = async (subCategoryId: string) => {
+    if (!newSubSubCategoryName.trim()) return;
+    
+    try {
+      const res = await fetch("/api/links/subsubcategories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          name: newSubSubCategoryName.trim(),
+          subCategoryId 
+        }),
+      });
+      
+      if (res.ok) {
+        const newSubSubCategory = await res.json();
+        setData(data.map(cat => ({
+          ...cat,
+          subCategories: cat.subCategories.map(subCat =>
+            subCat.id === subCategoryId
+              ? { ...subCat, subSubCategories: [...subCat.subSubCategories, { ...newSubSubCategory, links: [] }] }
+              : subCat
+          )
+        })));
+        setNewSubSubCategoryName("");
+        setAddingSubSubCategoryTo(null);
+      }
+    } catch (error) {
+      console.error("Error creating sub-subcategory:", error);
     }
   };
 
   const createLink = async () => {
-    if (!newLink.title.trim() || !newLink.url.trim() || !addingLinkTo) return;
-    
-    const linkData = {
-      title: newLink.title.trim(),
-      url: newLink.url.trim(),
-      description: newLink.description.trim() || null,
-      [`${addingLinkTo.type}Id`]: addingLinkTo.id,
-    };
+    if (!newLinkTitle.trim() || !newLinkUrl.trim() || !addingLinkTo) return;
     
     try {
       const res = await fetch("/api/links", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(linkData),
+        body: JSON.stringify({ 
+          title: newLinkTitle.trim(),
+          url: newLinkUrl.trim(),
+          description: newLinkDescription.trim(),
+          [addingLinkTo.type]: addingLinkTo.id
+        }),
       });
       
       if (res.ok) {
-        const createdLink = await res.json();
-        
-        // Update state
-        setCategories(categories.map(cat => {
-          if (addingLinkTo.type === 'category' && cat.id === addingLinkTo.id) {
-            return { ...cat, links: [...cat.links, createdLink] };
+        const newLink = await res.json();
+        setData(data.map(cat => {
+          if (addingLinkTo.type === "categoryId" && cat.id === addingLinkTo.id) {
+            return { ...cat, links: [...cat.links, newLink] };
           }
-          
           return {
             ...cat,
             subCategories: cat.subCategories.map(subCat => {
-              if (addingLinkTo.type === 'subCategory' && subCat.id === addingLinkTo.id) {
-                return { ...subCat, links: [...subCat.links, createdLink] };
+              if (addingLinkTo.type === "subCategoryId" && subCat.id === addingLinkTo.id) {
+                return { ...subCat, links: [...subCat.links, newLink] };
               }
-              
               return {
                 ...subCat,
-                subSubCategories: subCat.subSubCategories.map(subSubCat => 
-                  addingLinkTo.type === 'subSubCategory' && subSubCat.id === addingLinkTo.id
-                    ? { ...subSubCat, links: [...subSubCat.links, createdLink] }
+                subSubCategories: subCat.subSubCategories.map(subSubCat =>
+                  addingLinkTo.type === "subSubCategoryId" && subSubCat.id === addingLinkTo.id
+                    ? { ...subSubCat, links: [...subSubCat.links, newLink] }
                     : subSubCat
                 )
               };
             })
           };
         }));
-        
-        setNewLink({ title: "", url: "", description: "" });
+        setNewLinkTitle("");
+        setNewLinkUrl("");
+        setNewLinkDescription("");
         setAddingLinkTo(null);
       }
     } catch (error) {
-      console.error("Failed to create link:", error);
+      console.error("Error creating link:", error);
     }
   };
 
-  const updateLink = async (linkId: string) => {
-    if (!editLink.title.trim() || !editLink.url.trim()) return;
+  // EDIT FUNCTIONS
+  const startEditCategory = (category: LinkCategory) => {
+    setEditingCategory(category.id);
+    setEditName(category.name);
+  };
+
+  const startEditSubCategory = (subCategory: LinkSubCategory) => {
+    setEditingSubCategory(subCategory.id);
+    setEditName(subCategory.name);
+  };
+
+  const startEditSubSubCategory = (subSubCategory: LinkSubSubCategory) => {
+    setEditingSubSubCategory(subSubCategory.id);
+    setEditName(subSubCategory.name);
+  };
+
+  const startEditLink = (link: Link) => {
+    setEditingLink(link.id);
+    setEditTitle(link.title);
+    setEditUrl(link.url);
+    setEditDescription(link.description || "");
+  };
+
+  const saveEditCategory = async (categoryId: string) => {
+    if (!editName.trim()) return;
+    
+    try {
+      const res = await fetch(`/api/links/categories/${categoryId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName.trim() }),
+      });
+      
+      if (res.ok) {
+        setData(data.map(cat => 
+          cat.id === categoryId ? { ...cat, name: editName.trim() } : cat
+        ));
+        setEditingCategory(null);
+        setEditName("");
+      }
+    } catch (error) {
+      console.error("Error updating category:", error);
+    }
+  };
+
+  const saveEditSubCategory = async (subCategoryId: string) => {
+    if (!editName.trim()) return;
+    
+    try {
+      const res = await fetch(`/api/links/subcategories/${subCategoryId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName.trim() }),
+      });
+      
+      if (res.ok) {
+        setData(data.map(cat => ({
+          ...cat,
+          subCategories: cat.subCategories.map(subCat =>
+            subCat.id === subCategoryId ? { ...subCat, name: editName.trim() } : subCat
+          )
+        })));
+        setEditingSubCategory(null);
+        setEditName("");
+      }
+    } catch (error) {
+      console.error("Error updating subcategory:", error);
+    }
+  };
+
+  const saveEditSubSubCategory = async (subSubCategoryId: string) => {
+    if (!editName.trim()) return;
+    
+    try {
+      const res = await fetch(`/api/links/subsubcategories/${subSubCategoryId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName.trim() }),
+      });
+      
+      if (res.ok) {
+        setData(data.map(cat => ({
+          ...cat,
+          subCategories: cat.subCategories.map(subCat => ({
+            ...subCat,
+            subSubCategories: subCat.subSubCategories.map(subSubCat =>
+              subSubCat.id === subSubCategoryId ? { ...subSubCat, name: editName.trim() } : subSubCat
+            )
+          }))
+        })));
+        setEditingSubSubCategory(null);
+        setEditName("");
+      }
+    } catch (error) {
+      console.error("Error updating sub-subcategory:", error);
+    }
+  };
+
+  const saveEditLink = async (linkId: string) => {
+    if (!editTitle.trim() || !editUrl.trim()) return;
     
     try {
       const res = await fetch(`/api/links/${linkId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: editLink.title.trim(),
-          url: editLink.url.trim(),
-          description: editLink.description.trim() || null,
+        body: JSON.stringify({ 
+          title: editTitle.trim(),
+          url: editUrl.trim(),
+          description: editDescription.trim() 
         }),
       });
       
       if (res.ok) {
-        const updatedLink = await res.json();
-        
-        // Update the link in state
-        setCategories(categories.map(cat => ({
+        setData(data.map(cat => ({
           ...cat,
-          links: cat.links.map(link => link.id === linkId ? updatedLink : link),
+          links: cat.links.map(link => 
+            link.id === linkId ? { ...link, title: editTitle.trim(), url: editUrl.trim(), description: editDescription.trim() } : link
+          ),
           subCategories: cat.subCategories.map(subCat => ({
             ...subCat,
-            links: subCat.links.map(link => link.id === linkId ? updatedLink : link),
+            links: subCat.links.map(link => 
+              link.id === linkId ? { ...link, title: editTitle.trim(), url: editUrl.trim(), description: editDescription.trim() } : link
+            ),
             subSubCategories: subCat.subSubCategories.map(subSubCat => ({
               ...subSubCat,
-              links: subSubCat.links.map(link => link.id === linkId ? updatedLink : link)
+              links: subSubCat.links.map(link => 
+                link.id === linkId ? { ...link, title: editTitle.trim(), url: editUrl.trim(), description: editDescription.trim() } : link
+              )
             }))
           }))
         })));
-        
         setEditingLink(null);
-        setEditLink({ title: "", url: "", description: "" });
+        setEditTitle("");
+        setEditUrl("");
+        setEditDescription("");
       }
     } catch (error) {
-      console.error("Failed to update link:", error);
+      console.error("Error updating link:", error);
+    }
+  };
+
+  // DELETE FUNCTIONS
+  const deleteCategory = async (categoryId: string) => {
+    try {
+      const res = await fetch(`/api/links/categories/${categoryId}`, {
+        method: "DELETE",
+      });
+      
+      if (res.ok) {
+        setData(data.filter(cat => cat.id !== categoryId));
+      } else {
+        const error = await res.json();
+        alert(error.error || "Failed to delete category");
+      }
+    } catch (error) {
+      console.error("Error deleting category:", error);
+    }
+  };
+
+  const deleteSubCategory = async (subCategoryId: string) => {
+    try {
+      const res = await fetch(`/api/links/subcategories/${subCategoryId}`, {
+        method: "DELETE",
+      });
+      
+      if (res.ok) {
+        setData(data.map(cat => ({
+          ...cat,
+          subCategories: cat.subCategories.filter(subCat => subCat.id !== subCategoryId)
+        })));
+      } else {
+        const error = await res.json();
+        alert(error.error || "Failed to delete subcategory");
+      }
+    } catch (error) {
+      console.error("Error deleting subcategory:", error);
+    }
+  };
+
+  const deleteSubSubCategory = async (subSubCategoryId: string) => {
+    try {
+      const res = await fetch(`/api/links/subsubcategories/${subSubCategoryId}`, {
+        method: "DELETE",
+      });
+      
+      if (res.ok) {
+        setData(data.map(cat => ({
+          ...cat,
+          subCategories: cat.subCategories.map(subCat => ({
+            ...subCat,
+            subSubCategories: subCat.subSubCategories.filter(subSubCat => subSubCat.id !== subSubCategoryId)
+          }))
+        })));
+      } else {
+        const error = await res.json();
+        alert(error.error || "Failed to delete sub-subcategory");
+      }
+    } catch (error) {
+      console.error("Error deleting sub-subcategory:", error);
     }
   };
 
   const deleteLink = async (linkId: string) => {
-    if (!confirm("Are you sure you want to delete this link?")) return;
-    
     try {
-      const res = await fetch(`/api/links/${linkId}`, { method: "DELETE" });
+      const res = await fetch(`/api/links/${linkId}`, {
+        method: "DELETE",
+      });
+      
       if (res.ok) {
-        // Remove link from state
-        setCategories(categories.map(cat => ({
+        setData(data.map(cat => ({
           ...cat,
           links: cat.links.filter(link => link.id !== linkId),
           subCategories: cat.subCategories.map(subCat => ({
@@ -233,572 +417,614 @@ export function HierarchicalLinksAdmin({ initialCategories }: { initialCategorie
         })));
       }
     } catch (error) {
-      console.error("Failed to delete link:", error);
+      console.error("Error deleting link:", error);
     }
+  };
+
+  // HELPER FUNCTIONS
+  const isCategoryEmpty = (category: LinkCategory) => {
+    return category.links.length === 0 && 
+           category.subCategories.every(sub => isSubCategoryEmpty(sub));
+  };
+
+  const isSubCategoryEmpty = (subCategory: LinkSubCategory) => {
+    return subCategory.links.length === 0 && 
+           subCategory.subSubCategories.every(subsub => subsub.links.length === 0);
+  };
+
+  const isSubSubCategoryEmpty = (subSubCategory: LinkSubSubCategory) => {
+    return subSubCategory.links.length === 0;
   };
 
   return (
     <div className="space-y-6">
-      <div className="bg-yellow-100 p-4 rounded">
-        <h2 className="font-bold">EDIT VERSION LOADED</h2>
-        <p>If you can see this yellow box, the new component is working.</p>
+      {/* Test Version Indicator */}
+      <div className="bg-yellow-200 border-2 border-yellow-400 p-4 rounded-lg">
+        <h2 className="font-bold text-yellow-800">EDIT VERSION LOADED</h2>
+        <p className="text-yellow-700">If you can see this yellow box, the new component is working.</p>
       </div>
 
-      {/* Rest of component... */}
-      <div className="card bg-blue-50">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Manage Business Links</h2>
-          {!isAddingCategory ? (
-            <button 
-              onClick={() => setIsAddingCategory(true)} 
-              className="bg-blue-600 text-white px-4 py-2 rounded font-medium"
-            >
-              + Add Main Category
-            </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <input 
-                className="input" 
-                placeholder="Category name"
+      {/* Add Category Form */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <button 
+            onClick={() => setIsAddingCategory(true)}
+            className="bg-green-600 text-white px-4 py-2 rounded font-medium"
+          >
+            + Add New Category
+          </button>
+        </div>
+        
+        {isAddingCategory && (
+          <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
+            <h3 className="font-medium mb-2">New Category</h3>
+            <div className="flex gap-2">
+              <input
+                type="text"
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && createCategory()}
-                autoFocus
+                placeholder="Category name..."
+                className="flex-1 px-3 py-2 border rounded"
               />
-              <button onClick={createCategory} className="bg-green-600 text-white px-3 py-2 rounded">
+              <button 
+                onClick={createCategory}
+                className="bg-green-600 text-white px-4 py-2 rounded"
+                disabled={!newCategoryName.trim()}
+              >
                 Save
               </button>
-              <button onClick={() => { setIsAddingCategory(false); setNewCategoryName(""); }} className="bg-gray-500 text-white px-3 py-2 rounded">
+              <button 
+                onClick={() => {
+                  setIsAddingCategory(false);
+                  setNewCategoryName("");
+                }}
+                className="bg-gray-400 text-white px-4 py-2 rounded"
+              >
                 Cancel
               </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* Categories */}
-      {categories.map((category) => {
-        const isExpanded = expandedCategories.has(category.id);
-        const hasContent = category.links.length > 0 || category.subCategories.length > 0;
-        
-        return (
-          <div key={category.id} className="card">
-            {/* Category Header */}
-            <div className="flex items-center justify-between mb-4">
-              <button
-                onClick={() => toggleCategory(category.id)}
-                className="flex items-center gap-2 text-left hover:bg-gray-50 rounded p-2 -m-2"
-              >
-                {hasContent ? (
-                  isExpanded ? (
-                    <ChevronDown className="w-5 h-5 text-gray-500" />
-                  ) : (
-                    <ChevronRight className="w-5 h-5 text-gray-500" />
-                  )
-                ) : (
-                  <div className="w-5 h-5" />
-                )}
-                <Folder className="w-5 h-5 text-blue-600" />
-                <span className="text-xl font-bold text-blue-700">{category.name}</span>
-              </button>
-              
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => setAddingSubCategoryTo(category.id)}
-                  className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm"
-                >
-                  + Add Subfolder
-                </button>
-                <button 
-                  onClick={() => setAddingLinkTo({ type: 'category', id: category.id })}
-                  className="bg-green-600 text-white px-3 py-1.5 rounded text-sm"
-                >
-                  + Add Link Here
-                </button>
-              </div>
-            </div>
-
-            {/* Add SubCategory Form */}
-            {addingSubCategoryTo === category.id && (
-              <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-                <h4 className="font-medium mb-2">Add Subfolder to "{category.name}"</h4>
-                <div className="flex items-center gap-2">
-                  <input 
-                    className="input flex-1" 
-                    placeholder="Subfolder name"
-                    value={newSubCategoryName}
-                    onChange={(e) => setNewSubCategoryName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && createSubCategory(category.id)}
-                    autoFocus
+      {/* Categories Display */}
+      {data.map((category) => (
+        <div key={category.id} className="border-2 border-gray-300 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              {editingCategory === category.id ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="px-3 py-1 border rounded font-medium text-lg"
                   />
-                  <button onClick={() => createSubCategory(category.id)} className="bg-green-600 text-white px-4 py-2 rounded">
+                  <button 
+                    onClick={() => saveEditCategory(category.id)}
+                    className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                  >
                     Save
                   </button>
-                  <button onClick={() => { setAddingSubCategoryTo(null); setNewSubCategoryName(""); }} className="bg-gray-500 text-white px-4 py-2 rounded">
+                  <button 
+                    onClick={() => {
+                      setEditingCategory(null);
+                      setEditName("");
+                    }}
+                    className="bg-gray-400 text-white px-3 py-1 rounded text-sm"
+                  >
                     Cancel
                   </button>
                 </div>
-              </div>
-            )}
+              ) : (
+                <>
+                  <h2 className="text-lg font-medium">📁 {category.name}</h2>
+                  <button 
+                    onClick={() => startEditCategory(category)}
+                    className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                  >
+                    Edit Name
+                  </button>
+                  {isCategoryEmpty(category) && (
+                    <button 
+                      onClick={() => deleteCategory(category.id)}
+                      className="bg-red-600 text-white px-3 py-1 rounded text-sm"
+                    >
+                      Delete Empty
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setAddingSubCategoryTo(category.id)}
+                className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm"
+              >
+                + Add Subfolder
+              </button>
+              <button 
+                onClick={() => setAddingLinkTo({ type: "categoryId", id: category.id })}
+                className="bg-green-600 text-white px-3 py-1.5 rounded text-sm"
+              >
+                + Add Link Here
+              </button>
+            </div>
+          </div>
 
-            {/* Add Link Form */}
-            {addingLinkTo?.type === 'category' && addingLinkTo.id === category.id && (
-              <div className="mb-4 p-4 bg-green-50 rounded-lg">
-                <h4 className="font-medium mb-2">Add Link to "{category.name}"</h4>
-                <div className="space-y-3">
-                  <input 
-                    className="input w-full" 
-                    placeholder="Link title"
-                    value={newLink.title}
-                    onChange={(e) => setNewLink({...newLink, title: e.target.value})}
+          {/* Add SubCategory Form */}
+          {addingSubCategoryTo === category.id && (
+            <div className="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
+              <h4 className="font-medium mb-2">New Subfolder in "{category.name}"</h4>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newSubCategoryName}
+                  onChange={(e) => setNewSubCategoryName(e.target.value)}
+                  placeholder="Subfolder name..."
+                  className="flex-1 px-3 py-2 border rounded"
+                />
+                <button 
+                  onClick={() => createSubCategory(category.id)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded"
+                  disabled={!newSubCategoryName.trim()}
+                >
+                  Save
+                </button>
+                <button 
+                  onClick={() => {
+                    setAddingSubCategoryTo(null);
+                    setNewSubCategoryName("");
+                  }}
+                  className="bg-gray-400 text-white px-4 py-2 rounded"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Category Direct Links */}
+          {category.links.map((link) => (
+            <div key={link.id} className="mb-2 p-3 bg-gray-50 rounded border border-gray-200">
+              {editingLink === link.id ? (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    placeholder="Link title..."
+                    className="w-full px-3 py-2 border rounded"
                   />
-                  <input 
-                    className="input w-full" 
-                    placeholder="URL"
-                    value={newLink.url}
-                    onChange={(e) => setNewLink({...newLink, url: e.target.value})}
+                  <input
+                    type="url"
+                    value={editUrl}
+                    onChange={(e) => setEditUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full px-3 py-2 border rounded"
                   />
-                  <input 
-                    className="input w-full" 
-                    placeholder="Description (optional)"
-                    value={newLink.description}
-                    onChange={(e) => setNewLink({...newLink, description: e.target.value})}
+                  <input
+                    type="text"
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    placeholder="Description (optional)..."
+                    className="w-full px-3 py-2 border rounded"
                   />
                   <div className="flex gap-2">
-                    <button onClick={createLink} className="bg-green-600 text-white px-4 py-2 rounded">
-                      Save Link
+                    <button 
+                      onClick={() => saveEditLink(link.id)}
+                      className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                    >
+                      Save
                     </button>
                     <button 
-                      onClick={() => { 
-                        setAddingLinkTo(null); 
-                        setNewLink({ title: "", url: "", description: "" }); 
-                      }} 
-                      className="bg-gray-500 text-white px-4 py-2 rounded"
+                      onClick={() => {
+                        setEditingLink(null);
+                        setEditTitle("");
+                        setEditUrl("");
+                        setEditDescription("");
+                      }}
+                      className="bg-gray-400 text-white px-3 py-1 rounded text-sm"
                     >
                       Cancel
                     </button>
                   </div>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">🔗 {link.title}</div>
+                    <div className="text-sm text-gray-600">{link.url}</div>
+                    {link.description && <div className="text-sm text-gray-500">{link.description}</div>}
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => startEditLink(link)}
+                      className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                    >
+                      Edit
+                    </button>
+                    <button 
+                      onClick={() => deleteLink(link.id)}
+                      className="bg-red-600 text-white px-3 py-1 rounded text-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
 
-            {/* Category Content */}
-            {isExpanded && (
-              <div className="ml-6 space-y-3">
-                {/* Category Links */}
-                {category.links
-                  .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title))
-                  .map((link) => (
-                    <div key={link.id}>
-                      {editingLink === link.id ? (
-                        <div className="p-4 bg-blue-50 rounded-lg border-2 border-blue-300">
-                          <h4 className="font-medium mb-2 text-blue-700">Edit Link</h4>
-                          <div className="space-y-2">
-                            <input 
-                              className="input w-full" 
-                              value={editLink.title}
-                              onChange={(e) => setEditLink({...editLink, title: e.target.value})}
-                              placeholder="Link title"
-                            />
-                            <input 
-                              className="input w-full" 
-                              value={editLink.url}
-                              onChange={(e) => setEditLink({...editLink, url: e.target.value})}
-                              placeholder="URL"
-                            />
-                            <input 
-                              className="input w-full" 
-                              value={editLink.description}
-                              onChange={(e) => setEditLink({...editLink, description: e.target.value})}
-                              placeholder="Description (optional)"
-                            />
+          {/* SubCategories */}
+          {category.subCategories
+            .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
+            .map((subCategory) => (
+              <div key={subCategory.id} className="ml-6 mb-4 border-l-4 border-blue-300 pl-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    {editingSubCategory === subCategory.id ? (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="px-3 py-1 border rounded font-medium"
+                        />
+                        <button 
+                          onClick={() => saveEditSubCategory(subCategory.id)}
+                          className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                        >
+                          Save
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setEditingSubCategory(null);
+                            setEditName("");
+                          }}
+                          className="bg-gray-400 text-white px-3 py-1 rounded text-sm"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <h3 className="font-medium text-blue-800">📂 {subCategory.name}</h3>
+                        <button 
+                          onClick={() => startEditSubCategory(subCategory)}
+                          className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                        >
+                          Edit Name
+                        </button>
+                        {isSubCategoryEmpty(subCategory) && (
+                          <button 
+                            onClick={() => deleteSubCategory(subCategory.id)}
+                            className="bg-red-600 text-white px-3 py-1 rounded text-sm"
+                          >
+                            Delete Empty
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => setAddingSubSubCategoryTo(subCategory.id)}
+                      className="bg-orange-600 text-white px-3 py-1.5 rounded text-sm"
+                    >
+                      + Add Sub-Subfolder
+                    </button>
+                    <button 
+                      onClick={() => setAddingLinkTo({ type: "subCategoryId", id: subCategory.id })}
+                      className="bg-green-600 text-white px-3 py-1.5 rounded text-sm"
+                    >
+                      + Add Link Here
+                    </button>
+                  </div>
+                </div>
+
+                {/* Add SubSubCategory Form */}
+                {addingSubSubCategoryTo === subCategory.id && (
+                  <div className="mb-3 p-3 bg-orange-50 rounded border border-orange-200">
+                    <h4 className="font-medium mb-2">New Sub-Subfolder in "{subCategory.name}"</h4>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newSubSubCategoryName}
+                        onChange={(e) => setNewSubSubCategoryName(e.target.value)}
+                        placeholder="Sub-subfolder name..."
+                        className="flex-1 px-3 py-2 border rounded"
+                      />
+                      <button 
+                        onClick={() => createSubSubCategory(subCategory.id)}
+                        className="bg-orange-600 text-white px-4 py-2 rounded"
+                        disabled={!newSubSubCategoryName.trim()}
+                      >
+                        Save
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setAddingSubSubCategoryTo(null);
+                          setNewSubSubCategoryName("");
+                        }}
+                        className="bg-gray-400 text-white px-4 py-2 rounded"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* SubCategory Direct Links */}
+                {subCategory.links.map((link) => (
+                  <div key={link.id} className="mb-2 p-3 bg-blue-50 rounded border border-blue-200">
+                    {editingLink === link.id ? (
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          placeholder="Link title..."
+                          className="w-full px-3 py-2 border rounded"
+                        />
+                        <input
+                          type="url"
+                          value={editUrl}
+                          onChange={(e) => setEditUrl(e.target.value)}
+                          placeholder="https://..."
+                          className="w-full px-3 py-2 border rounded"
+                        />
+                        <input
+                          type="text"
+                          value={editDescription}
+                          onChange={(e) => setEditDescription(e.target.value)}
+                          placeholder="Description (optional)..."
+                          className="w-full px-3 py-2 border rounded"
+                        />
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => saveEditLink(link.id)}
+                            className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                          >
+                            Save
+                          </button>
+                          <button 
+                            onClick={() => {
+                              setEditingLink(null);
+                              setEditTitle("");
+                              setEditUrl("");
+                              setEditDescription("");
+                            }}
+                            className="bg-gray-400 text-white px-3 py-1 rounded text-sm"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium">🔗 {link.title}</div>
+                          <div className="text-sm text-gray-600">{link.url}</div>
+                          {link.description && <div className="text-sm text-gray-500">{link.description}</div>}
+                        </div>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => startEditLink(link)}
+                            className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                          >
+                            Edit
+                          </button>
+                          <button 
+                            onClick={() => deleteLink(link.id)}
+                            className="bg-red-600 text-white px-3 py-1 rounded text-sm"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {/* Sub-Sub Categories */}
+                {subCategory.subSubCategories
+                  .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
+                  .map((subSubCategory) => (
+                    <div key={subSubCategory.id} className="ml-6 mb-3 border-l-4 border-orange-300 pl-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          {editingSubSubCategory === subSubCategory.id ? (
                             <div className="flex gap-2">
-                              <button onClick={() => updateLink(link.id)} className="bg-green-600 text-white px-4 py-2 rounded">
-                                Save Changes
+                              <input
+                                type="text"
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                className="px-3 py-1 border rounded font-medium"
+                              />
+                              <button 
+                                onClick={() => saveEditSubSubCategory(subSubCategory.id)}
+                                className="bg-orange-600 text-white px-3 py-1 rounded text-sm"
+                              >
+                                Save
                               </button>
                               <button 
-                                onClick={() => { 
-                                  setEditingLink(null); 
-                                  setEditLink({ title: "", url: "", description: "" }); 
-                                }} 
-                                className="bg-gray-500 text-white px-4 py-2 rounded"
+                                onClick={() => {
+                                  setEditingSubSubCategory(null);
+                                  setEditName("");
+                                }}
+                                className="bg-gray-400 text-white px-3 py-1 rounded text-sm"
                               >
                                 Cancel
                               </button>
                             </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border">
-                          <div className="flex items-center gap-2">
-                            <ExternalLink className="w-4 h-4 text-blue-600" />
-                            <div>
-                              <div className="font-medium text-blue-700">{link.title}</div>
-                              {link.description && (
-                                <div className="text-sm text-gray-600">{link.description}</div>
+                          ) : (
+                            <>
+                              <h4 className="font-medium text-orange-800">📁 {subSubCategory.name}</h4>
+                              <button 
+                                onClick={() => startEditSubSubCategory(subSubCategory)}
+                                className="bg-orange-600 text-white px-3 py-1 rounded text-sm"
+                              >
+                                Edit Name
+                              </button>
+                              {isSubSubCategoryEmpty(subSubCategory) && (
+                                <button 
+                                  onClick={() => deleteSubSubCategory(subSubCategory.id)}
+                                  className="bg-red-600 text-white px-3 py-1 rounded text-sm"
+                                >
+                                  Delete Empty
+                                </button>
                               )}
-                              <div className="text-xs text-gray-500">{link.url}</div>
-                            </div>
-                          </div>
-                          <div className="flex gap-1">
-                            <button 
-                              onClick={() => { 
-                                setEditingLink(link.id);
-                                setEditLink({ 
-                                  title: link.title, 
-                                  url: link.url, 
-                                  description: link.description || "" 
-                                });
-                              }}
-                              className="bg-blue-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1"
-                            >
-                              <Edit className="w-3 h-3" /> Edit
-                            </button>
-                            <button 
-                              onClick={() => deleteLink(link.id)}
-                              className="bg-red-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1"
-                            >
-                              <Trash2 className="w-3 h-3" /> Delete
-                            </button>
-                          </div>
+                            </>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        
+                        <button 
+                          onClick={() => setAddingLinkTo({ type: "subSubCategoryId", id: subSubCategory.id })}
+                          className="bg-green-600 text-white px-3 py-1.5 rounded text-sm"
+                        >
+                          + Add Link Here
+                        </button>
+                      </div>
 
-                {/* SubCategories */}
-                {category.subCategories
-                  .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
-                  .map((subCategory) => {
-                    const isSubExpanded = expandedSubCategories.has(subCategory.id);
-                    const hasSubContent = subCategory.links.length > 0 || subCategory.subSubCategories.length > 0;
-                    
-                    return (
-                      <div key={subCategory.id} className="border-l-4 border-orange-300 pl-4">
-                        {/* SubCategory Header */}
-                        <div className="flex items-center justify-between mb-2">
-                          <button
-                            onClick={() => toggleSubCategory(subCategory.id)}
-                            className="flex items-center gap-2 text-left hover:bg-gray-50 rounded p-1 -m-1"
-                          >
-                            {hasSubContent ? (
-                              isSubExpanded ? (
-                                <ChevronDown className="w-4 h-4 text-gray-400" />
-                              ) : (
-                                <ChevronRight className="w-4 h-4 text-gray-400" />
-                              )
-                            ) : (
-                              <div className="w-4 h-4" />
-                            )}
-                            <Folder className="w-4 h-4 text-orange-500" />
-                            <span className="font-bold text-orange-700">{subCategory.name}</span>
-                          </button>
-                          
-                          <div className="flex items-center gap-2">
-                            <button 
-                              onClick={() => setAddingLinkTo({ type: 'subCategory', id: subCategory.id })}
-                              className="bg-green-600 text-white px-2 py-1 rounded text-xs"
-                            >
-                              + Add Link Here
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Add Link Form for SubCategory */}
-                        {addingLinkTo?.type === 'subCategory' && addingLinkTo.id === subCategory.id && (
-                          <div className="mb-3 p-4 bg-green-50 rounded-lg">
-                            <h4 className="font-medium mb-2">Add Link to "{subCategory.name}"</h4>
+                      {/* Sub-SubCategory Links */}
+                      {subSubCategory.links.map((link) => (
+                        <div key={link.id} className="mb-2 p-3 bg-orange-50 rounded border border-orange-200">
+                          {editingLink === link.id ? (
                             <div className="space-y-2">
-                              <input 
-                                className="input w-full" 
-                                placeholder="Link title"
-                                value={newLink.title}
-                                onChange={(e) => setNewLink({...newLink, title: e.target.value})}
+                              <input
+                                type="text"
+                                value={editTitle}
+                                onChange={(e) => setEditTitle(e.target.value)}
+                                placeholder="Link title..."
+                                className="w-full px-3 py-2 border rounded"
                               />
-                              <input 
-                                className="input w-full" 
-                                placeholder="URL"
-                                value={newLink.url}
-                                onChange={(e) => setNewLink({...newLink, url: e.target.value})}
+                              <input
+                                type="url"
+                                value={editUrl}
+                                onChange={(e) => setEditUrl(e.target.value)}
+                                placeholder="https://..."
+                                className="w-full px-3 py-2 border rounded"
                               />
-                              <input 
-                                className="input w-full" 
-                                placeholder="Description (optional)"
-                                value={newLink.description}
-                                onChange={(e) => setNewLink({...newLink, description: e.target.value})}
+                              <input
+                                type="text"
+                                value={editDescription}
+                                onChange={(e) => setEditDescription(e.target.value)}
+                                placeholder="Description (optional)..."
+                                className="w-full px-3 py-2 border rounded"
                               />
                               <div className="flex gap-2">
-                                <button onClick={createLink} className="bg-green-600 text-white px-4 py-2 rounded">
-                                  Save Link
+                                <button 
+                                  onClick={() => saveEditLink(link.id)}
+                                  className="bg-orange-600 text-white px-3 py-1 rounded text-sm"
+                                >
+                                  Save
                                 </button>
                                 <button 
-                                  onClick={() => { 
-                                    setAddingLinkTo(null); 
-                                    setNewLink({ title: "", url: "", description: "" }); 
-                                  }} 
-                                  className="bg-gray-500 text-white px-4 py-2 rounded"
+                                  onClick={() => {
+                                    setEditingLink(null);
+                                    setEditTitle("");
+                                    setEditUrl("");
+                                    setEditDescription("");
+                                  }}
+                                  className="bg-gray-400 text-white px-3 py-1 rounded text-sm"
                                 >
                                   Cancel
                                 </button>
                               </div>
                             </div>
-                          </div>
-                        )}
-
-                        {/* SubCategory Links */}
-                        {isSubExpanded && (
-                          <div className="ml-6 space-y-2">
-                            {subCategory.links
-                              .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title))
-                              .map((link) => (
-                                <div key={link.id}>
-                                  {editingLink === link.id ? (
-                                    <div className="p-3 bg-orange-50 rounded border-2 border-orange-300">
-                                      <h4 className="font-medium mb-2 text-orange-700">Edit Link</h4>
-                                      <div className="space-y-2">
-                                        <input 
-                                          className="input w-full" 
-                                          value={editLink.title}
-                                          onChange={(e) => setEditLink({...editLink, title: e.target.value})}
-                                          placeholder="Link title"
-                                        />
-                                        <input 
-                                          className="input w-full" 
-                                          value={editLink.url}
-                                          onChange={(e) => setEditLink({...editLink, url: e.target.value})}
-                                          placeholder="URL"
-                                        />
-                                        <input 
-                                          className="input w-full" 
-                                          value={editLink.description}
-                                          onChange={(e) => setEditLink({...editLink, description: e.target.value})}
-                                          placeholder="Description (optional)"
-                                        />
-                                        <div className="flex gap-2">
-                                          <button onClick={() => updateLink(link.id)} className="bg-green-600 text-white px-3 py-1.5 rounded text-xs">
-                                            Save Changes
-                                          </button>
-                                          <button 
-                                            onClick={() => { 
-                                              setEditingLink(null); 
-                                              setEditLink({ title: "", url: "", description: "" }); 
-                                            }} 
-                                            className="bg-gray-500 text-white px-3 py-1.5 rounded text-xs"
-                                          >
-                                            Cancel
-                                          </button>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center justify-between p-2 bg-orange-50 rounded border">
-                                      <div className="flex items-center gap-2">
-                                        <ExternalLink className="w-4 h-4 text-orange-600" />
-                                        <div>
-                                          <div className="font-medium text-orange-700">{link.title}</div>
-                                          {link.description && (
-                                            <div className="text-sm text-gray-600">{link.description}</div>
-                                          )}
-                                          <div className="text-xs text-gray-500">{link.url}</div>
-                                        </div>
-                                      </div>
-                                      <div className="flex gap-1">
-                                        <button 
-                                          onClick={() => { 
-                                            setEditingLink(link.id);
-                                            setEditLink({ 
-                                              title: link.title, 
-                                              url: link.url, 
-                                              description: link.description || "" 
-                                            });
-                                          }}
-                                          className="bg-orange-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1"
-                                        >
-                                          <Edit className="w-3 h-3" /> Edit
-                                        </button>
-                                        <button 
-                                          onClick={() => deleteLink(link.id)}
-                                          className="bg-red-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1"
-                                        >
-                                          <Trash2 className="w-3 h-3" /> Delete
-                                        </button>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            {/* Sub-Sub Categories */}
-                            {subCategory.subSubCategories
-                              .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
-                              .map((subSubCategory) => (
-                                <div key={subSubCategory.id} className="border-l-4 border-green-300 pl-4 mt-3">
-                                  {/* Sub-Sub Category Header */}
-                                  <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-2">
-                                      <Folder className="w-4 h-4 text-green-500" />
-                                      <span className="font-bold text-green-700">{subSubCategory.name}</span>
-                                    </div>
-                                    
-                                    <div className="flex items-center gap-2">
-                                      <button 
-                                        onClick={() => setAddingLinkTo({ type: 'subSubCategory', id: subSubCategory.id })}
-                                        className="bg-green-600 text-white px-2 py-1 rounded text-xs"
-                                      >
-                                        + Add Link Here
-                                      </button>
-                                      {/* Delete SubSubCategory Button - only if empty */}
-                                      {subSubCategory.links.length === 0 && (
-                                        <button 
-                                          onClick={() => deleteSubSubCategory(subSubCategory.id)}
-                                          className="bg-red-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1"
-                                        >
-                                          <Trash2 className="w-3 h-3" /> Delete Empty
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Add Link Form for SubSubCategory */}
-                                  {addingLinkTo?.type === 'subSubCategory' && addingLinkTo.id === subSubCategory.id && (
-                                    <div className="mb-3 p-4 bg-green-50 rounded-lg">
-                                      <h4 className="font-medium mb-2">Add Link to "{subSubCategory.name}"</h4>
-                                      <div className="space-y-2">
-                                        <input 
-                                          className="input w-full" 
-                                          placeholder="Link title"
-                                          value={newLink.title}
-                                          onChange={(e) => setNewLink({...newLink, title: e.target.value})}
-                                        />
-                                        <input 
-                                          className="input w-full" 
-                                          placeholder="URL"
-                                          value={newLink.url}
-                                          onChange={(e) => setNewLink({...newLink, url: e.target.value})}
-                                        />
-                                        <input 
-                                          className="input w-full" 
-                                          placeholder="Description (optional)"
-                                          value={newLink.description}
-                                          onChange={(e) => setNewLink({...newLink, description: e.target.value})}
-                                        />
-                                        <div className="flex gap-2">
-                                          <button onClick={createLink} className="bg-green-600 text-white px-4 py-2 rounded">
-                                            Save Link
-                                          </button>
-                                          <button 
-                                            onClick={() => { 
-                                              setAddingLinkTo(null); 
-                                              setNewLink({ title: "", url: "", description: "" }); 
-                                            }} 
-                                            className="bg-gray-500 text-white px-4 py-2 rounded"
-                                          >
-                                            Cancel
-                                          </button>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Links in SubSubCategory */}
-                                  {subSubCategory.links
-                                    .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title))
-                                    .map((link) => (
-                                      <div key={link.id} className="mt-2">
-                                        {editingLink === link.id ? (
-                                          <div className="p-3 bg-green-50 rounded border-2 border-green-300">
-                                            <h4 className="font-medium mb-2 text-green-700">Edit Link</h4>
-                                            <div className="space-y-2">
-                                              <input 
-                                                className="input w-full" 
-                                                value={editLink.title}
-                                                onChange={(e) => setEditLink({...editLink, title: e.target.value})}
-                                                placeholder="Link title"
-                                              />
-                                              <input 
-                                                className="input w-full" 
-                                                value={editLink.url}
-                                                onChange={(e) => setEditLink({...editLink, url: e.target.value})}
-                                                placeholder="URL"
-                                              />
-                                              <input 
-                                                className="input w-full" 
-                                                value={editLink.description}
-                                                onChange={(e) => setEditLink({...editLink, description: e.target.value})}
-                                                placeholder="Description (optional)"
-                                              />
-                                              <div className="flex gap-2">
-                                                <button onClick={() => updateLink(link.id)} className="bg-green-600 text-white px-3 py-1.5 rounded text-xs">
-                                                  Save Changes
-                                                </button>
-                                                <button 
-                                                  onClick={() => { 
-                                                    setEditingLink(null); 
-                                                    setEditLink({ title: "", url: "", description: "" }); 
-                                                  }} 
-                                                  className="bg-gray-500 text-white px-3 py-1.5 rounded text-xs"
-                                                >
-                                                  Cancel
-                                                </button>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          <div className="flex items-center justify-between p-2 bg-green-50 rounded border">
-                                            <div className="flex items-center gap-2">
-                                              <ExternalLink className="w-4 h-4 text-green-600" />
-                                              <div>
-                                                <div className="font-medium text-green-700">{link.title}</div>
-                                                {link.description && (
-                                                  <div className="text-sm text-gray-600">{link.description}</div>
-                                                )}
-                                                <div className="text-xs text-gray-500">{link.url}</div>
-                                              </div>
-                                            </div>
-                                            <div className="flex gap-1">
-                                              <button 
-                                                onClick={() => { 
-                                                  setEditingLink(link.id);
-                                                  setEditLink({ 
-                                                    title: link.title, 
-                                                    url: link.url, 
-                                                    description: link.description || "" 
-                                                  });
-                                                }}
-                                                className="bg-green-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1"
-                                              >
-                                                <Edit className="w-3 h-3" /> Edit
-                                              </button>
-                                              <button 
-                                                onClick={() => deleteLink(link.id)}
-                                                className="bg-red-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1"
-                                              >
-                                                <Trash2 className="w-3 h-3" /> Delete
-                                              </button>
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-                                    ))}
-                                </div>
-                              ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                          ) : (
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium">🔗 {link.title}</div>
+                                <div className="text-sm text-gray-600">{link.url}</div>
+                                {link.description && <div className="text-sm text-gray-500">{link.description}</div>}
+                              </div>
+                              <div className="flex gap-2">
+                                <button 
+                                  onClick={() => startEditLink(link)}
+                                  className="bg-orange-600 text-white px-3 py-1 rounded text-sm"
+                                >
+                                  Edit
+                                </button>
+                                <button 
+                                  onClick={() => deleteLink(link.id)}
+                                  className="bg-red-600 text-white px-3 py-1 rounded text-sm"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
               </div>
-            )}
-          </div>
-        );
-      })}
+            ))}
 
-      {!categories.length && (
-        <div className="card text-center py-8">
-          <Folder className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-lg font-medium text-gray-500 mb-2">No Categories Yet</h3>
-          <p className="text-gray-400">Click "Add Main Category" to get started.</p>
+          {/* Add Link Form (appears when adding link to any level) */}
+          {addingLinkTo && (
+            <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+              <h3 className="font-medium mb-3">Add New Link</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Title *</label>
+                  <input
+                    type="text"
+                    value={newLinkTitle}
+                    onChange={(e) => setNewLinkTitle(e.target.value)}
+                    placeholder="Link title..."
+                    className="w-full px-3 py-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">URL *</label>
+                  <input
+                    type="url"
+                    value={newLinkUrl}
+                    onChange={(e) => setNewLinkUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full px-3 py-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <input
+                    type="text"
+                    value={newLinkDescription}
+                    onChange={(e) => setNewLinkDescription(e.target.value)}
+                    placeholder="Optional description..."
+                    className="w-full px-3 py-2 border rounded"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={createLink}
+                    className="bg-green-600 text-white px-4 py-2 rounded"
+                    disabled={!newLinkTitle.trim() || !newLinkUrl.trim()}
+                  >
+                    Save Link
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setAddingLinkTo(null);
+                      setNewLinkTitle("");
+                      setNewLinkUrl("");
+                      setNewLinkDescription("");
+                    }}
+                    className="bg-gray-400 text-white px-4 py-2 rounded"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      ))}
     </div>
   );
 }

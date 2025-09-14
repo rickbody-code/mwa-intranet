@@ -1,41 +1,45 @@
-// src/app/page.tsx (Updated)
+// src/app/page.tsx (Updated with Marsden Apps)
 export const dynamic = 'force-dynamic';
 import { prisma } from "@/lib/prisma";
 import { HierarchicalLinks } from "@/components/HierarchicalLinks";
 import { Search } from "@/components/Search";
+import { MarsdenApps } from "@/components/MarsdenApps";
 
 export default async function Home() {
-  const categories = await prisma.linkCategory.findMany({
-    include: {
-      links: {
-        orderBy: [{ order: "asc" }, { title: "asc" }]
-      },
-      subCategories: {
-        include: {
-          links: {
-            orderBy: [{ order: "asc" }, { title: "asc" }]
-          },
-          subSubCategories: {
-            include: {
-              links: {
-                orderBy: [{ order: "asc" }, { title: "asc" }]
-              }
-            },
-            orderBy: [{ order: "asc" }, { name: "asc" }]
-          }
+  const [categories, marsdenApps] = await Promise.all([
+    prisma.linkCategory.findMany({
+      include: {
+        links: {
+          orderBy: [{ order: "asc" }, { title: "asc" }]
         },
-        orderBy: [{ order: "asc" }, { name: "asc" }]
-      }
-    },
-    orderBy: [{ order: "asc" }, { name: "asc" }]
-  });
+        subCategories: {
+          include: {
+            links: {
+              orderBy: [{ order: "asc" }, { title: "asc" }]
+            },
+            subSubCategories: {
+              include: {
+                links: {
+                  orderBy: [{ order: "asc" }, { title: "asc" }]
+                }
+              },
+              orderBy: [{ order: "asc" }, { name: "asc" }]
+            }
+          },
+          orderBy: [{ order: "asc" }, { name: "asc" }]
+        }
+      },
+      orderBy: [{ order: "asc" }, { name: "asc" }]
+    }),
+    prisma.marsdenApp.findMany({ orderBy: { order: "asc" } })
+  ]);
 
   return (
     <div className="space-y-6">
       {/* Test Version Indicator */}
       <div className="bg-yellow-200 border-2 border-yellow-400 p-4 rounded-lg">
-        <h2 className="font-bold text-yellow-800">HOMEPAGE - HIERARCHICAL LINKS VERSION LOADED</h2>
-        <p className="text-yellow-700">If you see this yellow box, the new homepage with hierarchical links is active.</p>
+        <h2 className="font-bold text-yellow-800">HOMEPAGE - HIERARCHICAL LINKS + MARSDEN APPS VERSION LOADED</h2>
+        <p className="text-yellow-700">If you see this yellow box, the new homepage with hierarchical links AND Marsden Apps is active.</p>
       </div>
 
       {/* Welcome Section */}
@@ -47,6 +51,9 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* Marsden Wealth Apps Section - New addition */}
+      <MarsdenApps apps={marsdenApps} />
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         {/* Main Links Section */}
@@ -65,10 +72,14 @@ export default async function Home() {
             <Search />
           </div>
           
-          {/* Quick Stats */}
+          {/* Quick Stats - Updated to include apps */}
           <div className="card">
             <h3 className="text-lg font-semibold mb-3">Quick Stats</h3>
             <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Marsden Apps:</span>
+                <span className="font-medium">{marsdenApps.length}</span>
+              </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Categories:</span>
                 <span className="font-medium">{categories.length}</span>
@@ -99,6 +110,10 @@ export default async function Home() {
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 <span className="text-gray-600">Links organized</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span className="text-gray-600">Marsden Apps ready</span>
               </div>
             </div>
           </div>
