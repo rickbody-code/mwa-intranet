@@ -5,7 +5,6 @@ export const revalidate = 0;
 import { prisma } from "@/lib/prisma";
 import { HierarchicalLinksAdmin } from "@/components/HierarchicalLinksAdmin";
 import { MarsdenAppsAdmin } from "@/components/MarsdenAppsAdmin";
-import { MigrationHelper } from "@/components/MigrationHelper";
 
 // Type adapter to convert Prisma's null to undefined for component compatibility
 function adaptCategories(categories: any[]): any[] {
@@ -86,15 +85,6 @@ export default async function AdminPage() {
           Categories → Subcategories → Sub-subcategories → Links
         </p>
         <HierarchicalLinksAdmin initialData={categories} />
-      </section>
-
-      {/* EXISTING: Your Migration Helper */}
-      <section className="card">
-        <h2 className="h2 mb-4">Migration Helper</h2>
-        <p className="text-gray-600 mb-6">
-          Use this tool to help migrate your existing Quick Links to the new hierarchical structure
-        </p>
-        <MigrationHelper />
       </section>
     </div>
   );
