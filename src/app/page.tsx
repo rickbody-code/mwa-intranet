@@ -7,8 +7,39 @@ import { HierarchicalLinks } from "@/components/HierarchicalLinks";
 import { Search } from "@/components/Search";
 import { MarsdenApps } from "@/components/MarsdenApps";
 
+// Type adapter to convert Prisma's null to undefined for component compatibility
+function adaptCategories(categories: any[]): any[] {
+  return categories.map(cat => ({
+    ...cat,
+    description: cat.description ?? undefined,
+    links: cat.links.map((link: any) => ({
+      ...link,
+      description: link.description ?? undefined,
+      createdBy: link.createdBy ?? undefined
+    })),
+    subCategories: cat.subCategories.map((subCat: any) => ({
+      ...subCat,
+      description: subCat.description ?? undefined,
+      links: subCat.links.map((link: any) => ({
+        ...link,
+        description: link.description ?? undefined,
+        createdBy: link.createdBy ?? undefined
+      })),
+      subSubCategories: subCat.subSubCategories.map((subSubCat: any) => ({
+        ...subSubCat,
+        description: subSubCat.description ?? undefined,
+        links: subSubCat.links.map((link: any) => ({
+          ...link,
+          description: link.description ?? undefined,
+          createdBy: link.createdBy ?? undefined
+        }))
+      }))
+    }))
+  }));
+}
+
 export default async function Home() {
-  const [categories, marsdenApps] = await Promise.all([
+  const [categoriesRaw, marsdenApps] = await Promise.all([
     prisma.linkCategory.findMany({
       include: {
         links: {
@@ -35,6 +66,9 @@ export default async function Home() {
     }),
     prisma.marsdenApp.findMany({ orderBy: { order: "asc" } })
   ]);
+
+  // Adapt the categories to match component expectations
+  const categories = adaptCategories(categoriesRaw);
 
   return (
     <div className="space-y-6">
