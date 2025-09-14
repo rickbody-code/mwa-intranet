@@ -21,11 +21,6 @@ yarn-error.log*
 pnpm-debug.log*
 *.log
 
-# --- Env (keep only example)
-.env
-.env.*
-!.env.example
-
 # --- Prisma (keep migrations, ignore local dbs)
 prisma/*.db
 prisma/*.sqlite
@@ -37,3 +32,14 @@ prisma/studio/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Env files
+.env
+.env.*
+!.env.example
+**/*.env
+**/*.env.*
+**/*.local               # ← add
+**/.env*                 # ← add
+**/*Copy.local           # ← add (catches " - Copy.local" duplicates)
+

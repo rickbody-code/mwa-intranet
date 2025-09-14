@@ -3,27 +3,81 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  image     String?
-  role      Role     @default(STAFF)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String?
+  image         String?
+  role          String         @default("STAFF")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   announcements Announcement[]
 }
 
-enum Role {
-  ADMIN
-  STAFF
+// New hierarchical link system
+model LinkCategory {
+  id            String            @id @default(cuid())
+  name          String
+  description   String?
+  order         Int               @default(0)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  subCategories LinkSubCategory[]
+  links         Link[]            // Links directly at category level
 }
 
+model LinkSubCategory {
+  id               String               @id @default(cuid())
+  name             String
+  description      String?
+  order            Int                  @default(0)
+  categoryId       String
+  category         LinkCategory         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  subSubCategories LinkSubSubCategory[]
+  links            Link[]               // Links directly at subcategory level
+}
+
+model LinkSubSubCategory {
+  id            String          @id @default(cuid())
+  name          String
+  description   String?
+  order         Int             @default(0)
+  subCategoryId String
+  subCategory   LinkSubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  links         Link[]          // Links at sub-subcategory level
+}
+
+model Link {
+  id               String               @id @default(cuid())
+  title            String
+  url              String
+  description      String?
+  order            Int                  @default(0)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  
+  // Can belong to any level of the hierarchy
+  categoryId       String?
+  category         LinkCategory?        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  subCategoryId    String?
+  subCategory      LinkSubCategory?     @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+  
+  subSubCategoryId String?
+  subSubCategory   LinkSubSubCategory?  @relation(fields: [subSubCategoryId], references: [id], onDelete: Cascade)
+  
+  createdBy        String?
+}
+
+// Legacy models - keeping for backward compatibility
 model Announcement {
   id        String   @id @default(cuid())
   title     String
@@ -44,13 +98,13 @@ model QuickLink {
 }
 
 model Staff {
-  id        String   @id @default(cuid())
-  name      String
-  title     String
-  email     String   @unique
-  phone     String?
-  location  String?
+  id         String   @id @default(cuid())
+  name       String
+  title      String
+  email      String   @unique
+  phone      String?
+  location   String?
   department String?
-  image     String?
-  createdAt DateTime @default(now())
+  image      String?
+  createdAt  DateTime @default(now())
 }
