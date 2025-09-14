@@ -1,67 +1,125 @@
+// src/app/page.tsx (Updated with Marsden Apps)
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
 import { prisma } from "@/lib/prisma";
-import { AnnouncementList } from "@/components/AnnouncementList";
-import { QuickLinks } from "@/components/QuickLinks";
-import { StaffDirectory } from "@/components/StaffDirectory";
+import { HierarchicalLinks } from "@/components/HierarchicalLinks";
 import { Search } from "@/components/Search";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { MarsdenApps } from "@/components/MarsdenApps";
 
 export default async function Home() {
-  const [announcements, links, staff] = await Promise.all([
-    prisma.announcement.findMany({ orderBy: [{ pinned: "desc" }, { createdAt: "desc" }], take: 6 }),
-    prisma.quickLink.findMany({ orderBy: { createdAt: "desc" }, take: 12 }),
-    prisma.staff.findMany({ orderBy: { name: "asc" }, take: 50 }),
+  const [categories, marsdenApps] = await Promise.all([
+    prisma.linkCategory.findMany({
+      include: {
+        links: {
+          orderBy: [{ order: "asc" }, { title: "asc" }]
+        },
+        subCategories: {
+          include: {
+            links: {
+              orderBy: [{ order: "asc" }, { title: "asc" }]
+            },
+            subSubCategories: {
+              include: {
+                links: {
+                  orderBy: [{ order: "asc" }, { title: "asc" }]
+                }
+              },
+              orderBy: [{ order: "asc" }, { name: "asc" }]
+            }
+          },
+          orderBy: [{ order: "asc" }, { name: "asc" }]
+        }
+      },
+      orderBy: [{ order: "asc" }, { name: "asc" }]
+    }),
+    prisma.marsdenApp.findMany({ orderBy: { order: "asc" } })
   ]);
-
-  // Debug info
-  const session = await getServerSession(authOptions);
-  const adminEmailsRaw = process.env.ADMIN_EMAILS;
-  const adminList = (adminEmailsRaw || "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
-  const currentUserEmail = session?.user?.email?.toLowerCase();
-  const isInAdminList = adminList.includes(currentUserEmail || '');
 
   return (
     <div className="space-y-6">
-      {/* DEBUG INFO - TEMPORARY */}
-      <div className="card bg-yellow-50 border-2 border-yellow-400">
-        <h2 className="text-xl font-bold mb-4 text-red-600">🚨 DEBUG INFO (TEMPORARY)</h2>
-        <div className="text-sm space-y-2 font-mono">
-          <div><strong>Admin Emails (Raw):</strong> <span className="bg-gray-100 p-1">{adminEmailsRaw || '❌ NOT SET'}</span></div>
-          <div><strong>Admin List (Parsed):</strong> <span className="bg-gray-100 p-1">{JSON.stringify(adminList)}</span></div>
-          <div><strong>Your Email:</strong> <span className="bg-gray-100 p-1">{currentUserEmail || '❌ NOT SIGNED IN'}</span></div>
-          <div><strong>Your Role:</strong> <span className="bg-gray-100 p-1">{(session as any)?.role || '❌ NO ROLE'}</span></div>
-          <div><strong>Is In Admin List:</strong> <span className="bg-gray-100 p-1">{isInAdminList ? '✅ YES' : '❌ NO'}</span></div>
-          <div><strong>Session Exists:</strong> <span className="bg-gray-100 p-1">{session ? '✅ YES' : '❌ NO'}</span></div>
-          <div><strong>Session User:</strong> <span className="bg-gray-100 p-1">{JSON.stringify(session?.user) || '❌ NO USER DATA'}</span></div>
-          <div><strong>Full Session:</strong> <span className="bg-gray-100 p-1 text-xs">{JSON.stringify(session)}</span></div>
-        </div>
+      {/* Test Version Indicator */}
+      <div className="bg-yellow-200 border-2 border-yellow-400 p-4 rounded-lg">
+        <h2 className="font-bold text-yellow-800">HOMEPAGE - HIERARCHICAL LINKS + MARSDEN APPS VERSION LOADED</h2>
+        <p className="text-yellow-700">If you see this yellow box, the new homepage with hierarchical links AND Marsden Apps is active.</p>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <section className="xl:col-span-2 card">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="h1">Announcements</h1>
+      {/* Welcome Section */}
+      <section className="card">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="h1">MWA Business Hub</h1>
+            <p className="text-gray-600 mt-1">Your central access point for all business systems and resources</p>
           </div>
-          <AnnouncementList announcements={announcements} />
+        </div>
+      </section>
+
+      {/* Marsden Wealth Apps Section - New addition */}
+      <MarsdenApps apps={marsdenApps} />
+
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        {/* Main Links Section */}
+        <section className="xl:col-span-3 card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="h2">Business Systems & Resources</h2>
+            <span className="text-sm text-gray-500">{categories.length} categories</span>
+          </div>
+          <HierarchicalLinks categories={categories} />
         </section>
 
+        {/* Sidebar */}
         <aside className="xl:col-span-1 space-y-6">
           <div className="card">
             <h2 className="h2 mb-3">Search</h2>
             <Search />
           </div>
+          
+          {/* Quick Stats - Updated to include apps */}
           <div className="card">
-            <h2 className="h2 mb-3">Quick Links</h2>
-            <QuickLinks links={links} />
+            <h3 className="text-lg font-semibold mb-3">Quick Stats</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Marsden Apps:</span>
+                <span className="font-medium">{marsdenApps.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Categories:</span>
+                <span className="font-medium">{categories.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Total Links:</span>
+                <span className="font-medium">
+                  {categories.reduce((total, cat) => 
+                    total + cat.links.length + 
+                    cat.subCategories.reduce((subTotal, subCat) => 
+                      subTotal + subCat.links.length + 
+                      subCat.subSubCategories.reduce((subSubTotal, subSubCat) => 
+                        subSubTotal + subSubCat.links.length, 0), 0), 0
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* System Status */}
+          <div className="card">
+            <h3 className="text-lg font-semibold mb-3">System Status</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-gray-600">All systems operational</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-gray-600">Links organized</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span className="text-gray-600">Marsden Apps ready</span>
+              </div>
+            </div>
           </div>
         </aside>
-
-        <section className="xl:col-span-3 card">
-          <h2 className="h2 mb-4">Staff Directory</h2>
-          <StaffDirectory staff={staff} />
-        </section>
       </div>
     </div>
   );
