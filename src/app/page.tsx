@@ -1,5 +1,7 @@
 // src/app/page.tsx (Updated with Marsden Apps)
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { prisma } from "@/lib/prisma";
 import { HierarchicalLinks } from "@/components/HierarchicalLinks";
 import { Search } from "@/components/Search";
@@ -99,7 +101,7 @@ export default async function Home() {
             </div>
           </div>
 
-          {/* Recent Updates */}
+          {/* System Status */}
           <div className="card">
             <h3 className="text-lg font-semibold mb-3">System Status</h3>
             <div className="space-y-2 text-sm">
