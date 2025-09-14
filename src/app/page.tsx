@@ -123,11 +123,11 @@ export default async function Home() {
               <div className="flex justify-between">
                 <span className="text-gray-600">Total Links:</span>
                 <span className="font-medium">
-                  {categories.reduce((total, cat) => 
+                  {categories.reduce((total: number, cat: any) => 
                     total + cat.links.length + 
-                    cat.subCategories.reduce((subTotal, subCat) => 
+                    cat.subCategories.reduce((subTotal: number, subCat: any) => 
                       subTotal + subCat.links.length + 
-                      subCat.subSubCategories.reduce((subSubTotal, subSubCat) => 
+                      subCat.subSubCategories.reduce((subSubTotal: number, subSubCat: any) => 
                         subSubTotal + subSubCat.links.length, 0), 0), 0
                   )}
                 </span>
