@@ -25,6 +25,7 @@ model User {
   pageViews        PageView[]     @relation("PageViewer")
   activityLogs     ActivityLog[]  @relation("ActivityActor")
   pagePermissions  PagePermission[] @relation("PermissionSubject")
+  settingUpdates   WikiSetting[]    @relation("SettingUpdater")
 }
 
 enum Role {
@@ -277,11 +278,11 @@ model PagePermission {
 model ActivityLog {
   id        String          @id @default(cuid())
   pageId    String?
-  page      Page?           @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  page      Page?           @relation(fields: [pageId], references: [id], onDelete: SetNull)
   versionId String?
-  version   PageVersion?    @relation(fields: [versionId], references: [id], onDelete: Cascade)
-  actorId   String
-  actor     User            @relation("ActivityActor", fields: [actorId], references: [id])
+  version   PageVersion?    @relation(fields: [versionId], references: [id], onDelete: SetNull)
+  actorId   String?
+  actor     User?           @relation("ActivityActor", fields: [actorId], references: [id], onDelete: SetNull)
   type      ActivityType
   data      Json?           // Additional context data
   createdAt DateTime        @default(now())
@@ -303,6 +304,8 @@ enum ActivityType {
   TAG_ADD
   TAG_REMOVE
   PERMISSION_CHANGE
+  USER_ROLE_CHANGE
+  SETTINGS_UPDATE
 }
 
 model PageLink {
@@ -316,4 +319,15 @@ model PageLink {
   @@unique([fromPageId, toPageId])
   @@index([fromPageId])
   @@index([toPageId])
+}
+
+model WikiSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
+  updatedBy String
+  user      User     @relation("SettingUpdater", fields: [updatedBy], references: [id])
+  
+  @@index([key])
 }
