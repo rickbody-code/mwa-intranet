@@ -49,7 +49,22 @@ export async function GET(
         parent: { select: { id: true, title: true, slug: true } },
         children: { 
           select: { id: true, title: true, slug: true, status: true },
-          where: user.role === "ADMIN" ? {} : { status: "PUBLISHED" }
+          where: user.role === "ADMIN" ? {} : {
+            OR: [
+              { status: "PUBLISHED" },
+              { createdById: user.id },
+              {
+                permissions: {
+                  some: {
+                    OR: [
+                      { userId: user.id, canRead: true },
+                      { role: user.role, canRead: true }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
         },
         attachments: {
           select: {
@@ -265,7 +280,16 @@ export async function PUT(
         }
       });
 
-      return updatedPage;
+      // Fetch and return page with updated tags
+      return await tx.page.findUnique({
+        where: { id: params.id },
+        include: {
+          createdBy: { select: { name: true, email: true } },
+          updatedBy: { select: { name: true, email: true } },
+          currentVersion: true,
+          tags: { include: { tag: true } }
+        }
+      });
     });
 
     return NextResponse.json(result);
@@ -337,18 +361,22 @@ export async function DELETE(
     const force = searchParams.get("force") === "true";
 
     if (force && user.role === "ADMIN") {
-      // Permanently delete page
-      await prisma.page.delete({
-        where: { id: params.id }
-      });
+      // Permanently delete page with proper cleanup
+      await prisma.$transaction(async (tx) => {
+        // Log activity first (before deletion)
+        await tx.activityLog.create({
+          data: {
+            pageId: params.id,
+            actorId: user.id,
+            type: "DELETE",
+            data: { pageId: params.id, title: page.title, permanent: true }
+          }
+        });
 
-      // Log activity
-      await prisma.activityLog.create({
-        data: {
-          actorId: user.id,
-          type: "DELETE",
-          data: { pageId: params.id, title: page.title, permanent: true }
-        }
+        // Delete page (cascading deletes handle most dependencies via schema)
+        await tx.page.delete({
+          where: { id: params.id }
+        });
       });
 
       return NextResponse.json({ message: "Page permanently deleted" });
@@ -396,12 +424,7 @@ async function canUserAccessPage(
     return true;
   }
 
-  // For non-published pages, only admins and creators can access
-  if (page.status !== "PUBLISHED" && page.createdById !== userId) {
-    return false;
-  }
-
-  // Check page-specific permissions
+  // Check page-specific permissions FIRST (before status filtering)
   const pagePermission = page.permissions?.find((p: any) => 
     (p.userId === userId) || (p.role === userRole)
   );
@@ -417,17 +440,23 @@ async function canUserAccessPage(
     }
   }
 
+  // Creator permissions (can access their own content regardless of status)
+  if (page.createdById === userId) {
+    return true; // Creators can read/write/admin their own pages
+  }
+
   // Default permissions for published pages
   if (page.status === "PUBLISHED") {
     switch (permission) {
       case "READ":
         return true; // All authenticated users can read published pages
       case "WRITE":
-        return userRole === "ADMIN" || page.createdById === userId;
+        return false; // Need explicit permission or creator/admin
       case "ADMIN":
-        return userRole === "ADMIN" || page.createdById === userId;
+        return false; // Need explicit permission or creator/admin
     }
   }
 
+  // Non-published pages require explicit permission or creator/admin access
   return false;
 }

@@ -52,9 +52,41 @@ export async function GET(request: NextRequest) {
         ]
       };
 
-      // Filter by status (non-admins only see published)
+      // Apply permission-based filtering for non-admin users
       if (user.role !== "ADMIN") {
-        whereClause.status = "PUBLISHED";
+        whereClause.AND = [
+          {
+            OR: [
+              // Published pages that everyone can read
+              { status: "PUBLISHED" },
+              // Pages user created (can see their own drafts)
+              { createdById: user.id },
+              // Pages with explicit user permissions
+              {
+                permissions: {
+                  some: {
+                    userId: user.id,
+                    canRead: true
+                  }
+                }
+              },
+              // Pages with role-based permissions
+              {
+                permissions: {
+                  some: {
+                    role: user.role,
+                    canRead: true
+                  }
+                }
+              }
+            ]
+          }
+        ];
+        
+        // Add status filter if specified
+        if (status) {
+          whereClause.AND.push({ status: status });
+        }
       } else if (status) {
         whereClause.status = status;
       }
@@ -115,14 +147,35 @@ export async function GET(request: NextRequest) {
 
     // Search attachments (by filename and extracted text)
     if (type === "all" || type === "attachments") {
-      const attachments = await prisma.attachment.findMany({
-        where: {
+      const attachmentWhere: any = {
+        OR: [
+          { originalName: { contains: query, mode: "insensitive" } },
+          { extractedText: { contains: query, mode: "insensitive" } }
+        ]
+      };
+
+      // Apply permission filtering for attachments too
+      if (user.role !== "ADMIN") {
+        attachmentWhere.page = {
           OR: [
-            { originalName: { contains: query, mode: "insensitive" } },
-            { extractedText: { contains: query, mode: "insensitive" } }
-          ],
-          page: user.role === "ADMIN" ? {} : { status: "PUBLISHED" }
-        },
+            { status: "PUBLISHED" },
+            { createdById: user.id },
+            {
+              permissions: {
+                some: {
+                  OR: [
+                    { userId: user.id, canRead: true },
+                    { role: user.role, canRead: true }
+                  ]
+                }
+              }
+            }
+          ]
+        };
+      }
+
+      const attachments = await prisma.attachment.findMany({
+        where: attachmentWhere,
         include: {
           page: { select: { title: true, slug: true, path: true } },
           uploadedBy: { select: { name: true, email: true } }

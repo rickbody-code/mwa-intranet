@@ -65,14 +65,54 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    // Only show published pages to STAFF users, ADMIN can see all
+    // Get user for permission checking
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      select: { role: true }
+      select: { id: true, role: true }
     });
 
-    if (user?.role !== "ADMIN") {
-      where.status = "PUBLISHED";
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Apply permission-based filtering for non-admin users
+    if (user.role !== "ADMIN") {
+      where.OR = [
+        // Published pages that everyone can read
+        { status: "PUBLISHED" },
+        // Pages user created (can see their own drafts)
+        { createdById: user.id },
+        // Pages with explicit user permissions
+        {
+          permissions: {
+            some: {
+              userId: user.id,
+              canRead: true
+            }
+          }
+        },
+        // Pages with role-based permissions
+        {
+          permissions: {
+            some: {
+              role: user.role,
+              canRead: true
+            }
+          }
+        }
+      ];
+      
+      // Remove the status filter as it's now part of OR clause
+      if (status && where.status) {
+        delete where.status;
+        // Add status to all OR conditions if specified
+        where.OR = where.OR.map((condition: any) => ({
+          ...condition,
+          status: status
+        }));
+      }
+    } else if (status) {
+      where.status = status;
     }
 
     const [pages, total] = await Promise.all([
@@ -84,7 +124,31 @@ export async function GET(request: NextRequest) {
           currentVersion: { select: { title: true, changeNote: true, createdAt: true } },
           tags: { include: { tag: true } },
           parent: { select: { title: true, slug: true } },
-          children: { select: { id: true, title: true, slug: true, status: true } },
+          // Filter children by permissions too
+          children: { 
+            select: { id: true, title: true, slug: true, status: true },
+            where: user.role === "ADMIN" ? {} : {
+              OR: [
+                { status: "PUBLISHED" },
+                { createdById: user.id },
+                {
+                  permissions: {
+                    some: {
+                      OR: [
+                        { userId: user.id, canRead: true },
+                        { role: user.role, canRead: true }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          permissions: {
+            include: {
+              user: { select: { name: true, email: true } }
+            }
+          },
           _count: {
             select: { views: true, versions: true, attachments: true }
           }
@@ -230,7 +294,16 @@ export async function POST(request: NextRequest) {
         }
       });
 
-      return updatedPage;
+      // Fetch and return page with updated tags
+      return await tx.page.findUnique({
+        where: { id: page.id },
+        include: {
+          createdBy: { select: { name: true, email: true } },
+          updatedBy: { select: { name: true, email: true } },
+          currentVersion: true,
+          tags: { include: { tag: true } }
+        }
+      });
     });
 
     return NextResponse.json(result, { status: 201 });
