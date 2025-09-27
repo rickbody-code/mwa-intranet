@@ -16,6 +16,15 @@ model User {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   announcements Announcement[]
+  
+  // Wiki system relations
+  createdPages     Page[]         @relation("PageCreator")
+  updatedPages     Page[]         @relation("PageUpdater")
+  pageVersions     PageVersion[]  @relation("VersionCreator")
+  attachments      Attachment[]   @relation("AttachmentUploader")
+  pageViews        PageView[]     @relation("PageViewer")
+  activityLogs     ActivityLog[]  @relation("ActivityActor")
+  pagePermissions  PagePermission[] @relation("PermissionSubject")
 }
 
 enum Role {
@@ -124,4 +133,187 @@ model Staff {
   department String?
   image      String?
   createdAt  DateTime @default(now())
+}
+
+// Wiki Knowledge Base System Models
+
+model Page {
+  id               String      @id @default(cuid())
+  title            String
+  slug             String      @unique
+  path             String      @unique // Full hierarchical path like /parent/child
+  parentId         String?
+  parent           Page?       @relation("PageHierarchy", fields: [parentId], references: [id])
+  children         Page[]      @relation("PageHierarchy")
+  status           PageStatus  @default(DRAFT)
+  currentVersionId String?
+  currentVersion   PageVersion? @relation("CurrentVersion", fields: [currentVersionId], references: [id])
+  summary          String?
+  viewCount        Int         @default(0)
+  createdById      String
+  createdBy        User        @relation("PageCreator", fields: [createdById], references: [id])
+  updatedById      String
+  updatedBy        User        @relation("PageUpdater", fields: [updatedById], references: [id])
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  
+  // Relations
+  versions         PageVersion[] @relation("PageVersions")
+  tags             PageTag[]
+  attachments      Attachment[]
+  views            PageView[]
+  permissions      PagePermission[]
+  activityLogs     ActivityLog[]
+  outgoingLinks    PageLink[]   @relation("FromPage")
+  incomingLinks    PageLink[]   @relation("ToPage")
+  
+  @@index([slug])
+  @@index([path])
+  @@index([status])
+  @@index([createdAt])
+  @@index([viewCount])
+}
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model PageVersion {
+  id              String   @id @default(cuid())
+  pageId          String
+  page            Page     @relation("PageVersions", fields: [pageId], references: [id], onDelete: Cascade)
+  title           String
+  contentJSON     Json     // TipTap/ProseMirror content
+  contentMarkdown String   // For diffs and search
+  changeNote      String?
+  isMinorEdit     Boolean  @default(false)
+  createdById     String
+  createdBy       User     @relation("VersionCreator", fields: [createdById], references: [id])
+  createdAt       DateTime @default(now())
+  
+  // Relations
+  attachments     Attachment[]
+  activityLogs    ActivityLog[]
+  currentVersionOf Page[]     @relation("CurrentVersion")
+  
+  @@index([pageId])
+  @@index([createdAt])
+}
+
+model Tag {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  color       String?   // Hex color for display
+  createdAt   DateTime  @default(now())
+  
+  pages       PageTag[]
+  
+  @@index([name])
+}
+
+model PageTag {
+  pageId String
+  tagId  String
+  page   Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  @@id([pageId, tagId])
+}
+
+model Attachment {
+  id            String       @id @default(cuid())
+  pageId        String
+  page          Page         @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  versionId     String?
+  version       PageVersion? @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  filename      String
+  originalName  String
+  blobKey       String       // Object storage key
+  contentType   String
+  size          Int
+  checksum      String?
+  extractedText String?      // For search indexing
+  uploadedById  String
+  uploadedBy    User         @relation("AttachmentUploader", fields: [uploadedById], references: [id])
+  createdAt     DateTime     @default(now())
+  
+  @@index([pageId])
+  @@index([versionId])
+  @@index([createdAt])
+}
+
+model PageView {
+  id        String   @id @default(cuid())
+  pageId    String
+  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  userId    String?  // Anonymous views have null userId
+  user      User?    @relation("PageViewer", fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  
+  @@index([pageId])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+model PagePermission {
+  id        String   @id @default(cuid())
+  pageId    String
+  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  userId    String?  // For user-specific permissions
+  user      User?    @relation("PermissionSubject", fields: [userId], references: [id])
+  role      Role?    // For role-based permissions
+  canRead   Boolean  @default(true)
+  canWrite  Boolean  @default(false)
+  canAdmin  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  @@unique([pageId, userId, role])
+  @@index([pageId])
+}
+
+model ActivityLog {
+  id        String          @id @default(cuid())
+  pageId    String?
+  page      Page?           @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  versionId String?
+  version   PageVersion?    @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  actorId   String
+  actor     User            @relation("ActivityActor", fields: [actorId], references: [id])
+  type      ActivityType
+  data      Json?           // Additional context data
+  createdAt DateTime        @default(now())
+  
+  @@index([pageId])
+  @@index([actorId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+enum ActivityType {
+  CREATE
+  UPDATE
+  RESTORE
+  UPLOAD
+  DELETE
+  PUBLISH
+  ARCHIVE
+  TAG_ADD
+  TAG_REMOVE
+  PERMISSION_CHANGE
+}
+
+model PageLink {
+  id         String   @id @default(cuid())
+  fromPageId String
+  fromPage   Page     @relation("FromPage", fields: [fromPageId], references: [id], onDelete: Cascade)
+  toPageId   String
+  toPage     Page     @relation("ToPage", fields: [toPageId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  
+  @@unique([fromPageId, toPageId])
+  @@index([fromPageId])
+  @@index([toPageId])
 }
