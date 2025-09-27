@@ -3,6 +3,7 @@
 import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import WikiEditor from './WikiEditor';
+import SimpleCollaborativeEditor from './SimpleCollaborativeEditor';
 
 // Import the markdown conversion function from WikiEditor
 function convertToMarkdown(doc: any): string {
@@ -143,6 +144,7 @@ export default function WikiPageForm({
 
   const [isSaving, setIsSaving] = useState(false);
   const [isPreview, setIsPreview] = useState(false);
+  const [useCollaborativeEditor, setUseCollaborativeEditor] = useState(mode === 'edit');
 
   const handleContentChange = useCallback((content: any) => {
     setFormData(prev => ({ ...prev, content }));
@@ -253,17 +255,41 @@ export default function WikiPageForm({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Content
-                </label>
-                <WikiEditor
-                  content={formData.content}
-                  onChange={handleContentChange}
-                  onSave={handleSave}
-                  placeholder="Start writing your wiki page..."
-                  className="mt-2"
-                  pageId={initialData?.id}
-                />
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Content
+                  </label>
+                  {mode === 'edit' && (
+                    <div className="flex items-center space-x-2">
+                      <label className="text-sm text-gray-600">Real-time collaboration:</label>
+                      <input
+                        type="checkbox"
+                        checked={useCollaborativeEditor}
+                        onChange={(e) => setUseCollaborativeEditor(e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </div>
+                  )}
+                </div>
+                
+                {useCollaborativeEditor && mode === 'edit' ? (
+                  <SimpleCollaborativeEditor
+                    pageId={initialData?.id || 'new-page'}
+                    initialContent={formData.content}
+                    onChange={handleContentChange}
+                    editable={true}
+                    className="mt-2"
+                  />
+                ) : (
+                  <WikiEditor
+                    content={formData.content}
+                    onChange={handleContentChange}
+                    onSave={handleSave}
+                    placeholder="Start writing your wiki page..."
+                    className="mt-2"
+                    pageId={initialData?.id}
+                  />
+                )}
               </div>
 
               {mode === 'edit' && (
