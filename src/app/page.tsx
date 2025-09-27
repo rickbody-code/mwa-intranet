@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { HierarchicalLinks } from "@/components/HierarchicalLinks";
 import { Search } from "@/components/Search";
 import { MarsdenApps } from "@/components/MarsdenApps";
+import { WikiWidget } from "@/components/wiki/WikiWidget";
 
 // Type adapter to convert Prisma's null to undefined for component compatibility
 function adaptCategories(categories: any[]): any[] {
@@ -103,6 +104,9 @@ export default async function Home() {
 
         {/* Sidebar */}
         <aside className="xl:col-span-1 space-y-6">
+          {/* Wiki Knowledge Base Widget */}
+          <WikiWidget />
+          
           <div className="card">
             <h2 className="h2 mb-3">Search</h2>
             <Search />
