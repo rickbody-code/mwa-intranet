@@ -102,25 +102,19 @@ export async function POST(
       });
 
       // Log the revert activity (if ActivityLog is available)
-      try {
-        await tx.activityLog.create({
+      await tx.activityLog.create({
+        data: {
+          pageId: params.id,
+          versionId: newVersion.id,
+          actorId: user.id,
+          type: "RESTORE",
           data: {
-            type: 'REVERT',
-            description: `Reverted page to version from ${targetVersion.createdAt.toISOString()}`,
-            entityType: 'PAGE',
-            entityId: params.id,
-            userId: user.id,
-            metadata: {
-              fromVersionId: page.currentVersionId,
-              toVersionId: versionId,
-              newVersionId: newVersion.id
-            }
+            fromVersionId: page.currentVersionId,
+            toVersionId: versionId,
+            description: `Reverted page to version from ${targetVersion.createdAt.toISOString()}`
           }
-        });
-      } catch (error) {
-        // ActivityLog not implemented yet, continue without logging
-        console.log('ActivityLog not available, skipping activity logging');
-      }
+        }
+      });
 
       return { page: updatedPage, newVersion };
     });
