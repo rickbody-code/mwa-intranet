@@ -144,7 +144,7 @@ export default function WikiPageForm({
 
   const [isSaving, setIsSaving] = useState(false);
   const [isPreview, setIsPreview] = useState(false);
-  const [useCollaborativeEditor, setUseCollaborativeEditor] = useState(mode === 'edit');
+  const [useCollaborativeEditor, setUseCollaborativeEditor] = useState(false);
 
   const handleContentChange = useCallback((content: any) => {
     setFormData(prev => ({ ...prev, content }));
