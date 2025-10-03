@@ -195,7 +195,7 @@ export default async function WikiBrowsePage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <Link
-                      href={`/wiki${page.path}`}
+                      href={`/wiki/pages/${page.slug || page.id}`}
                       className="text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors"
                     >
                       {page.title}

@@ -10,15 +10,28 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = session.user as any;
+    // Get actual user from database
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true, role: true }
+    });
 
-    // Get page to verify access
-    const page = await prisma.page.findUnique({
-      where: { id: params.id },
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Get page to verify access (support both ID and slug)
+    const page = await prisma.page.findFirst({
+      where: {
+        OR: [
+          { id: params.id },
+          { slug: params.id }
+        ]
+      },
       include: {
         permissions: {
           where: {
@@ -45,9 +58,9 @@ export async function GET(
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
-    // Get all versions with author info
+    // Get all versions with author info (use actual page.id from the lookup)
     const versions = await prisma.pageVersion.findMany({
-      where: { pageId: params.id },
+      where: { pageId: page.id },
       include: {
         createdBy: {
           select: {
