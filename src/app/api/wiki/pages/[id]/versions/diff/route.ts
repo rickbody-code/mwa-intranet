@@ -81,15 +81,30 @@ export async function GET(
       }, { status: 400 });
     }
 
-    // Get page to verify access
-    const page = await prisma.page.findUnique({
-      where: { id: params.id },
+    // Get user from database to get user.id
+    const dbUser = await prisma.user.findUnique({
+      where: { email: user.email },
+      select: { id: true, role: true }
+    });
+
+    if (!dbUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 401 });
+    }
+
+    // Get page to verify access (support both ID and slug)
+    const page = await prisma.page.findFirst({
+      where: {
+        OR: [
+          { id: params.id },
+          { slug: params.id }
+        ]
+      },
       include: {
         permissions: {
           where: {
             OR: [
-              { userId: user.id },
-              { role: user.role }
+              { userId: dbUser.id },
+              { role: dbUser.role }
             ]
           }
         }
@@ -101,9 +116,9 @@ export async function GET(
     }
 
     // Check read access
-    const hasAccess = user.role === 'ADMIN' || 
+    const hasAccess = dbUser.role === 'ADMIN' || 
       page.status === 'PUBLISHED' || 
-      page.createdById === user.id ||
+      page.createdById === dbUser.id ||
       page.permissions.some(p => p.canRead);
 
     if (!hasAccess) {
@@ -113,7 +128,7 @@ export async function GET(
     // Get both versions
     const [fromVersion, toVersion] = await Promise.all([
       prisma.pageVersion.findFirst({
-        where: { id: fromVersionId, pageId: params.id },
+        where: { id: fromVersionId, pageId: page.id },
         include: {
           createdBy: {
             select: { name: true, email: true }
@@ -121,7 +136,7 @@ export async function GET(
         }
       }),
       prisma.pageVersion.findFirst({
-        where: { id: toVersionId, pageId: params.id },
+        where: { id: toVersionId, pageId: page.id },
         include: {
           createdBy: {
             select: { name: true, email: true }

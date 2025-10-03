@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Clock, User, Eye, RotateCcw, GitCompare, AlertCircle } from 'lucide-react';
 
 interface Version {
@@ -28,6 +29,7 @@ export default function VersionHistory({
   currentVersionId, 
   className = "" 
 }: VersionHistoryProps) {
+  const router = useRouter();
   const [versions, setVersions] = useState<Version[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -234,7 +236,7 @@ export default function VersionHistory({
 
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => window.open(`/wiki/pages/${pageId}?version=${version.id}`, '_blank')}
+                  onClick={() => router.push(`/wiki/pages/${pageId}?version=${version.id}`)}
                   className="p-1 text-gray-400 hover:text-gray-600"
                   title="View this version"
                 >
