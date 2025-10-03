@@ -304,6 +304,7 @@ export default async function WikiPageView({ params, searchParams }: PageProps) 
                   <VersionHistory 
                     pageId={params.id}
                     currentVersionId={page.actualCurrentVersionId}
+                    viewedVersionId={page.currentVersion?.id}
                   />
                 </div>
               </div>

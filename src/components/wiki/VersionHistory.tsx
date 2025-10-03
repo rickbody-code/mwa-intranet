@@ -21,12 +21,14 @@ interface Version {
 interface VersionHistoryProps {
   pageId: string;
   currentVersionId?: string;
+  viewedVersionId?: string;
   className?: string;
 }
 
 export default function VersionHistory({ 
   pageId, 
   currentVersionId, 
+  viewedVersionId,
   className = "" 
 }: VersionHistoryProps) {
   const router = useRouter();
@@ -183,13 +185,14 @@ export default function VersionHistory({
       <div className="space-y-2">
         {versions.map((version, index) => {
           const isCurrent = version.id === currentVersionId;
+          const isViewed = version.id === viewedVersionId;
           const isSelected = selectedVersions.includes(version.id);
           
           return (
             <div 
               key={version.id}
               className={`flex items-center space-x-3 p-3 border rounded-lg transition-colors ${
-                isCurrent ? 'bg-green-50 border-green-200' : 
+                isViewed ? 'bg-green-50 border-green-200' : 
                 isSelected ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'
               }`}
             >
