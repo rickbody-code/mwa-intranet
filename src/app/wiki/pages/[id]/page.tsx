@@ -65,6 +65,9 @@ async function getWikiPage(id: string, versionId?: string, userRole?: string, us
 
     if (!page) return null;
 
+    // Store the actual latest version ID
+    const actualCurrentVersionId = page.currentVersion?.id;
+
     // If specific version requested, get that version
     if (versionId) {
       const version = await prisma.pageVersion.findUnique({
@@ -77,12 +80,13 @@ async function getWikiPage(id: string, versionId?: string, userRole?: string, us
       if (version && version.pageId === page.id) {
         return {
           ...page,
-          currentVersion: version
+          currentVersion: version,
+          actualCurrentVersionId
         };
       }
     }
 
-    return page;
+    return { ...page, actualCurrentVersionId };
   } catch (error) {
     console.error('Error fetching wiki page:', error);
     return null;
@@ -299,7 +303,7 @@ export default async function WikiPageView({ params, searchParams }: PageProps) 
                 <div className="p-4">
                   <VersionHistory 
                     pageId={params.id}
-                    currentVersionId={page.currentVersion?.id}
+                    currentVersionId={page.actualCurrentVersionId}
                   />
                 </div>
               </div>

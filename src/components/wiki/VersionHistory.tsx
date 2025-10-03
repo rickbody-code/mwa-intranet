@@ -197,7 +197,6 @@ export default function VersionHistory({
                 type="checkbox"
                 checked={isSelected}
                 onChange={(e) => handleVersionSelect(version.id, e.target.checked)}
-                disabled={isCurrent}
                 className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
               />
               
