@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Edit, Clock, User, Eye, FileText, Tag } from 'lucide-react';
 import VersionHistory from '@/components/wiki/VersionHistory';
+import { renderTiptapContent } from '@/lib/tiptap-renderer';
 
 interface PageProps {
   params: { id: string };
@@ -240,18 +241,11 @@ export default async function WikiPageView({ params, searchParams }: PageProps) 
                 
                 {/* Render the page content */}
                 <div className="prose max-w-none">
-                  {page.version?.contentMarkdown || page.currentVersion?.contentMarkdown ? (
+                  {page.currentVersion?.contentJSON ? (
                     <div 
                       className="wiki-content"
                       dangerouslySetInnerHTML={{
-                        __html: (page.version?.contentMarkdown || page.currentVersion?.contentMarkdown)
-                          .replace(/\n/g, '<br>')
-                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                          .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                          .replace(/`(.*?)`/g, '<code>$1</code>')
-                          .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-                          .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-                          .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                        __html: renderTiptapContent(page.currentVersion.contentJSON)
                       }}
                     />
                   ) : (
