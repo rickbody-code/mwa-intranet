@@ -12,25 +12,77 @@ interface PageProps {
   searchParams: { version?: string };
 }
 
-async function getWikiPage(id: string, versionId?: string) {
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-  
+async function getWikiPage(id: string, versionId?: string, userRole?: string, userId?: string) {
   try {
-    const url = new URL(`${baseUrl}/api/wiki/pages/${id}`);
-    if (versionId) {
-      url.searchParams.set('versionId', versionId);
-    }
+    const { prisma } = await import('@/lib/prisma');
     
-    const response = await fetch(url.toString(), {
-      headers: { 'Cache-Control': 'no-cache' },
+    // Try to find page by ID or slug
+    const page = await prisma.page.findFirst({
+      where: {
+        OR: [
+          { id: id },
+          { slug: id }
+        ]
+      },
+      include: {
+        createdBy: { select: { id: true, name: true, email: true } },
+        updatedBy: { select: { id: true, name: true, email: true } },
+        currentVersion: true,
+        tags: { include: { tag: true } },
+        parent: { select: { id: true, title: true, slug: true } },
+        children: { 
+          select: { id: true, title: true, slug: true, status: true },
+          where: userRole === "ADMIN" ? {} : {
+            OR: [
+              { status: "PUBLISHED" },
+              { createdById: userId },
+              {
+                permissions: {
+                  some: {
+                    OR: [
+                      { userId: userId, canRead: true },
+                      { role: userRole, canRead: true }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        },
+        attachments: {
+          select: {
+            id: true,
+            filename: true,
+            originalName: true,
+            size: true,
+            contentType: true,
+            uploadedBy: { select: { name: true } },
+            createdAt: true
+          }
+        }
+      }
     });
-    
-    if (!response.ok) {
-      if (response.status === 404) return null;
-      throw new Error('Failed to fetch page');
+
+    if (!page) return null;
+
+    // If specific version requested, get that version
+    if (versionId) {
+      const version = await prisma.pageVersion.findUnique({
+        where: { id: versionId },
+        include: {
+          createdBy: { select: { name: true, email: true } }
+        }
+      });
+      
+      if (version && version.pageId === page.id) {
+        return {
+          ...page,
+          currentVersion: version
+        };
+      }
     }
-    
-    return response.json();
+
+    return page;
   } catch (error) {
     console.error('Error fetching wiki page:', error);
     return null;
@@ -38,7 +90,8 @@ async function getWikiPage(id: string, versionId?: string) {
 }
 
 export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
-  const page = await getWikiPage(params.id, searchParams.version);
+  const session = await getServerSession(authOptions);
+  const page = await getWikiPage(params.id, searchParams.version, session?.user?.role, session?.user?.id);
   
   if (!page) {
     return {
@@ -58,18 +111,28 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
 export default async function WikiPageView({ params, searchParams }: PageProps) {
   const session = await getServerSession(authOptions);
   
-  if (!session) {
-    redirect('/login');
+  if (!session?.user?.email) {
+    redirect('/');
   }
 
-  const page = await getWikiPage(params.id, searchParams.version);
+  const { prisma } = await import('@/lib/prisma');
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { id: true, role: true }
+  });
+
+  if (!user) {
+    redirect('/');
+  }
+
+  const page = await getWikiPage(params.id, searchParams.version, user.role, user.id);
   
   if (!page) {
     notFound();
   }
 
   const isHistoricalVersion = searchParams.version && searchParams.version !== page.currentVersion?.id;
-  const canEdit = session.user?.role === 'ADMIN' || page.createdBy?.id === session.user?.id;
+  const canEdit = user.role === 'ADMIN' || page.createdBy?.id === user.id;
 
   return (
     <div className="min-h-screen bg-gray-50">
