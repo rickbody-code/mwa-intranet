@@ -43,6 +43,7 @@ import {
   Palette,
   Highlighter,
   Type,
+  Paintbrush,
   Upload,
   Save,
   Eye
@@ -127,6 +128,8 @@ export default function WikiEditor({
 }: WikiEditorProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [copiedFormat, setCopiedFormat] = useState<any>(null);
+  const [formatPainterActive, setFormatPainterActive] = useState(false);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -273,6 +276,52 @@ export default function WikiEditor({
     }
   }, [editor]);
 
+  const handleCopyFormat = useCallback(() => {
+    if (!editor) return;
+    
+    const { from, to } = editor.state.selection;
+    const marks = editor.state.doc.nodeAt(from)?.marks || [];
+    const attributes = editor.getAttributes('textStyle');
+    
+    setCopiedFormat({
+      marks,
+      textStyle: attributes,
+      bold: editor.isActive('bold'),
+      italic: editor.isActive('italic'),
+      underline: editor.isActive('underline'),
+      strike: editor.isActive('strike'),
+      code: editor.isActive('code'),
+      color: attributes.color,
+      fontFamily: attributes.fontFamily,
+      highlight: editor.isActive('highlight') ? editor.getAttributes('highlight') : null,
+    });
+    
+    setFormatPainterActive(true);
+  }, [editor]);
+
+  const handlePasteFormat = useCallback(() => {
+    if (!editor || !copiedFormat) return;
+    
+    // Clear existing formatting first
+    editor.chain().focus().unsetAllMarks().run();
+    
+    // Apply copied formatting
+    const chain = editor.chain().focus();
+    
+    if (copiedFormat.bold) chain.toggleBold();
+    if (copiedFormat.italic) chain.toggleItalic();
+    if (copiedFormat.underline) chain.toggleUnderline();
+    if (copiedFormat.strike) chain.toggleStrike();
+    if (copiedFormat.code) chain.toggleCode();
+    if (copiedFormat.color) chain.setColor(copiedFormat.color);
+    if (copiedFormat.fontFamily) chain.setFontFamily(copiedFormat.fontFamily);
+    if (copiedFormat.highlight) chain.toggleHighlight({ color: copiedFormat.highlight.color });
+    
+    chain.run();
+    
+    setFormatPainterActive(false);
+  }, [editor, copiedFormat]);
+
   const ToolbarButton = ({ 
     onClick, 
     isActive = false, 
@@ -352,6 +401,26 @@ export default function WikiEditor({
           title="Inline Code"
         >
           <Code className="w-4 h-4" />
+        </ToolbarButton>
+
+        <div className="w-px h-6 bg-gray-300 mx-1"></div>
+
+        {/* Format Painter */}
+        <ToolbarButton
+          onClick={handleCopyFormat}
+          isActive={formatPainterActive}
+          title="Copy Format (select text and click to copy its formatting)"
+        >
+          <Paintbrush className="w-4 h-4" />
+        </ToolbarButton>
+        
+        <ToolbarButton
+          onClick={handlePasteFormat}
+          disabled={!copiedFormat}
+          title="Paste Format (select text and click to apply copied formatting)"
+          isActive={false}
+        >
+          <Paintbrush className="w-4 h-4 fill-current" />
         </ToolbarButton>
 
         <div className="w-px h-6 bg-gray-300 mx-1"></div>
