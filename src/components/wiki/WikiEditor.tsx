@@ -100,7 +100,7 @@ function convertToMarkdown(doc: any): string {
 }
 
 interface WikiEditorProps {
-  content?: string;
+  content?: any; // Can be string or TipTap JSON object
   onChange?: (content: any) => void;
   onSave?: (content: any, markdown: string) => Promise<void>;
   onPreview?: () => void;
