@@ -24,26 +24,45 @@ export async function POST(
       }, { status: 400 });
     }
 
-    // Get the page and target version
-    const [page, targetVersion] = await Promise.all([
-      prisma.page.findUnique({
-        where: { id: params.id },
-        include: {
-          currentVersion: true,
-          permissions: {
-            where: {
-              OR: [
-                { userId: user.id },
-                { role: user.role }
-              ]
-            }
+    // Get user from database to get user.id
+    const dbUser = await prisma.user.findUnique({
+      where: { email: user.email },
+      select: { id: true, role: true }
+    });
+
+    if (!dbUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 401 });
+    }
+
+    // Get the page (by ID or slug)
+    const page = await prisma.page.findFirst({
+      where: {
+        OR: [
+          { id: params.id },
+          { slug: params.id }
+        ]
+      },
+      include: {
+        currentVersion: true,
+        permissions: {
+          where: {
+            OR: [
+              { userId: dbUser.id },
+              { role: dbUser.role }
+            ]
           }
         }
-      }),
-      prisma.pageVersion.findFirst({
-        where: { id: versionId, pageId: params.id }
-      })
-    ]);
+      }
+    });
+
+    if (!page) {
+      return NextResponse.json({ error: "Page not found" }, { status: 404 });
+    }
+
+    // Get the target version
+    const targetVersion = await prisma.pageVersion.findFirst({
+      where: { id: versionId, pageId: page.id }
+    });
 
     if (!page) {
       return NextResponse.json({ error: "Page not found" }, { status: 404 });
@@ -56,8 +75,8 @@ export async function POST(
     }
 
     // Check edit access
-    const canEdit = user.role === 'ADMIN' || 
-      page.createdById === user.id ||
+    const canEdit = dbUser.role === 'ADMIN' || 
+      page.createdById === dbUser.id ||
       page.permissions.some(p => p.canWrite);
 
     if (!canEdit) {
@@ -76,22 +95,22 @@ export async function POST(
       // Create a new version with the target version's content
       const newVersion = await tx.pageVersion.create({
         data: {
-          pageId: params.id,
+          pageId: page.id,
           title: targetVersion.title,
           contentJSON: targetVersion.contentJSON,
           contentMarkdown: targetVersion.contentMarkdown,
           changeNote: changeNote || `Reverted to version from ${targetVersion.createdAt.toISOString()}`,
-          createdById: user.id,
+          createdById: dbUser.id,
         }
       });
 
       // Update page to use the new version
       const updatedPage = await tx.page.update({
-        where: { id: params.id },
+        where: { id: page.id },
         data: {
           title: targetVersion.title,
           currentVersionId: newVersion.id,
-          updatedById: user.id,
+          updatedById: dbUser.id,
           summary: targetVersion.contentMarkdown?.substring(0, 200)
         },
         include: {
@@ -104,9 +123,9 @@ export async function POST(
       // Log the revert activity (if ActivityLog is available)
       await tx.activityLog.create({
         data: {
-          pageId: params.id,
+          pageId: page.id,
           versionId: newVersion.id,
-          actorId: user.id,
+          actorId: dbUser.id,
           type: "RESTORE",
           data: {
             fromVersionId: page.currentVersionId,

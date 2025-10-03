@@ -234,7 +234,7 @@ export default function VersionHistory({
 
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => window.open(`/wiki/${pageId}?version=${version.id}`, '_blank')}
+                  onClick={() => window.open(`/wiki/pages/${pageId}?version=${version.id}`, '_blank')}
                   className="p-1 text-gray-400 hover:text-gray-600"
                   title="View this version"
                 >
