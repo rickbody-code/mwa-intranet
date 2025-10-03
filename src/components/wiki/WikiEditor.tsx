@@ -124,8 +124,13 @@ export default function WikiEditor({
   const [isUploading, setIsUploading] = useState(false);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Disable bold and italic from StarterKit since we're adding them separately
+        bold: false,
+        italic: false,
+      }),
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
