@@ -16,6 +16,8 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import Underline from '@tiptap/extension-underline';
+import FontFamily from '@tiptap/extension-font-family';
+import Typography from '@tiptap/extension-typography';
 
 import { 
   Bold, 
@@ -37,7 +39,10 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  AlignJustify,
   Palette,
+  Highlighter,
+  Type,
   Upload,
   Save,
   Eye
@@ -195,11 +200,13 @@ export default function WikiEditor({
       TextStyle,
       Color,
       Highlight.configure({
-        HTMLAttributes: {
-          class: 'bg-yellow-200',
-        },
+        multicolor: true,
       }),
       Underline,
+      FontFamily.configure({
+        types: ['textStyle'],
+      }),
+      Typography,
     ],
     content: content || '',
     editable: !readOnly,
@@ -349,6 +356,52 @@ export default function WikiEditor({
 
         <div className="w-px h-6 bg-gray-300 mx-1"></div>
 
+        {/* Text Color */}
+        <div className="relative inline-block">
+          <input
+            type="color"
+            onChange={(e) => editor.chain().focus().setColor(e.target.value).run()}
+            value={editor.getAttributes('textStyle').color || '#000000'}
+            className="w-8 h-8 rounded cursor-pointer border border-gray-300"
+            title="Text Color"
+          />
+        </div>
+
+        {/* Highlight Color */}
+        <div className="relative inline-block">
+          <input
+            type="color"
+            onChange={(e) => editor.chain().focus().toggleHighlight({ color: e.target.value }).run()}
+            className="w-8 h-8 rounded cursor-pointer border border-gray-300"
+            title="Highlight Color"
+          />
+        </div>
+
+        {/* Font Family */}
+        <select
+          onChange={(e) => {
+            if (e.target.value === 'unset') {
+              editor.chain().focus().unsetFontFamily().run();
+            } else {
+              editor.chain().focus().setFontFamily(e.target.value).run();
+            }
+          }}
+          value={editor.getAttributes('textStyle').fontFamily || 'unset'}
+          className="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          title="Font Family"
+        >
+          <option value="unset">Default</option>
+          <option value="Arial">Arial</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Courier New">Courier New</option>
+          <option value="Verdana">Verdana</option>
+          <option value="Tahoma">Tahoma</option>
+          <option value="Comic Sans MS">Comic Sans MS</option>
+        </select>
+
+        <div className="w-px h-6 bg-gray-300 mx-1"></div>
+
         {/* Headings */}
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
@@ -426,6 +479,14 @@ export default function WikiEditor({
           title="Align Right"
         >
           <AlignRight className="w-4 h-4" />
+        </ToolbarButton>
+        
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setTextAlign('justify').run()}
+          isActive={editor.isActive({ textAlign: 'justify' })}
+          title="Justify"
+        >
+          <AlignJustify className="w-4 h-4" />
         </ToolbarButton>
 
         <div className="w-px h-6 bg-gray-300 mx-1"></div>
