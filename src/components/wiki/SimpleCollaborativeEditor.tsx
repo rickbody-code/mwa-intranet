@@ -36,6 +36,7 @@ export default function SimpleCollaborativeEditor({
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Image,
