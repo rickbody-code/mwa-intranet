@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Clock, User, Eye, RotateCcw, GitCompare, AlertCircle } from 'lucide-react';
+import { Clock, User, Eye, RotateCcw, GitCompare, AlertCircle, Trash2 } from 'lucide-react';
 
 interface Version {
   id: string;
@@ -37,6 +37,7 @@ export default function VersionHistory({
   const [error, setError] = useState<string>('');
   const [selectedVersions, setSelectedVersions] = useState<string[]>([]);
   const [reverting, setReverting] = useState<string>('');
+  const [deleting, setDeleting] = useState<string>('');
 
   useEffect(() => {
     loadVersions();
@@ -83,6 +84,34 @@ export default function VersionHistory({
         return bIndex - aIndex; // Older first (from), newer second (to)
       });
       window.open(`/wiki/diff/${pageId}?from=${from}&to=${to}`, '_blank');
+    }
+  };
+
+  const handleDeleteVersion = async (versionId: string) => {
+    try {
+      setDeleting(versionId);
+      
+      const response = await fetch(`/api/wiki/pages/${pageId}/versions/${versionId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete version');
+      }
+      
+      // Reload versions after deletion
+      await loadVersions();
+      
+      // If currently viewing the deleted version, redirect to current version
+      if (versionId === viewedVersionId) {
+        router.push(`/wiki/pages/${pageId}`);
+      }
+    } catch (error: any) {
+      console.error('Delete version failed:', error);
+      setError(error.message || 'Failed to delete version');
+    } finally {
+      setDeleting('');
     }
   };
 
@@ -246,22 +275,41 @@ export default function VersionHistory({
                 </button>
                 
                 {!isCurrent && (
-                  <button
-                    onClick={() => {
-                      if (confirm('Are you sure you want to revert to this version? This will create a new version with the content from this point.')) {
-                        handleRevertToVersion(version.id);
-                      }
-                    }}
-                    disabled={reverting === version.id}
-                    className="p-1 text-gray-400 hover:text-orange-600 disabled:opacity-50"
-                    title="Revert to this version"
-                  >
-                    {reverting === version.id ? (
-                      <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      <RotateCcw className="w-4 h-4" />
-                    )}
-                  </button>
+                  <>
+                    <button
+                      onClick={() => {
+                        if (confirm('Are you sure you want to revert to this version? This will create a new version with the content from this point.')) {
+                          handleRevertToVersion(version.id);
+                        }
+                      }}
+                      disabled={reverting === version.id}
+                      className="p-1 text-gray-400 hover:text-orange-600 disabled:opacity-50"
+                      title="Revert to this version"
+                    >
+                      {reverting === version.id ? (
+                        <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <RotateCcw className="w-4 h-4" />
+                      )}
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        if (confirm('Are you sure you want to delete this version? This action cannot be undone.')) {
+                          handleDeleteVersion(version.id);
+                        }
+                      }}
+                      disabled={deleting === version.id}
+                      className="p-1 text-gray-400 hover:text-red-600 disabled:opacity-50"
+                      title="Delete this version"
+                    >
+                      {deleting === version.id ? (
+                        <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                    </button>
+                  </>
                 )}
               </div>
             </div>
