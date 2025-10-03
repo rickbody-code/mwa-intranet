@@ -11,6 +11,8 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import Underline from '@tiptap/extension-underline';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
 
 const extensions = [
   StarterKit,
@@ -46,11 +48,15 @@ const extensions = [
   TextStyle,
   Color,
   Highlight.configure({
-    HTMLAttributes: {
-      class: 'bg-yellow-200',
-    },
+    multicolor: true,
   }),
   Underline,
+  TaskList,
+  TaskItem.configure({
+    HTMLAttributes: {
+      class: 'flex items-start',
+    },
+  }),
 ];
 
 export function renderTiptapContent(json: any): string {
