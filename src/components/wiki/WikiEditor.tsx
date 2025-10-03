@@ -18,6 +18,9 @@ import Highlight from '@tiptap/extension-highlight';
 import Underline from '@tiptap/extension-underline';
 import FontFamily from '@tiptap/extension-font-family';
 import Typography from '@tiptap/extension-typography';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+import CharacterCount from '@tiptap/extension-character-count';
 
 import { 
   Bold, 
@@ -44,6 +47,10 @@ import {
   Highlighter,
   Type,
   Paintbrush,
+  CheckSquare,
+  Eraser,
+  Search,
+  Omega,
   Upload,
   Save,
   Eye
@@ -130,6 +137,10 @@ export default function WikiEditor({
   const [isUploading, setIsUploading] = useState(false);
   const [copiedFormat, setCopiedFormat] = useState<any>(null);
   const [formatPainterActive, setFormatPainterActive] = useState(false);
+  const [showFindReplace, setShowFindReplace] = useState(false);
+  const [showSpecialChars, setShowSpecialChars] = useState(false);
+  const [findText, setFindText] = useState('');
+  const [replaceText, setReplaceText] = useState('');
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -210,6 +221,11 @@ export default function WikiEditor({
         types: ['textStyle'],
       }),
       Typography,
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
+      CharacterCount,
     ],
     content: content || '',
     editable: !readOnly,
@@ -423,6 +439,13 @@ export default function WikiEditor({
           <Paintbrush className="w-4 h-4 fill-current" />
         </ToolbarButton>
 
+        <ToolbarButton
+          onClick={() => editor.chain().focus().unsetAllMarks().run()}
+          title="Clear Formatting"
+        >
+          <Eraser className="w-4 h-4" />
+        </ToolbarButton>
+
         <div className="w-px h-6 bg-gray-300 mx-1"></div>
 
         {/* Text Color */}
@@ -467,6 +490,51 @@ export default function WikiEditor({
           <option value="Verdana">Verdana</option>
           <option value="Tahoma">Tahoma</option>
           <option value="Comic Sans MS">Comic Sans MS</option>
+        </select>
+
+        {/* Font Size */}
+        <select
+          onChange={(e) => {
+            if (e.target.value === 'unset') {
+              editor.chain().focus().unsetMark('textStyle').run();
+            } else {
+              editor.chain().focus().setMark('textStyle', { fontSize: e.target.value }).run();
+            }
+          }}
+          className="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          title="Font Size"
+        >
+          <option value="unset">Size</option>
+          <option value="12px">12px</option>
+          <option value="14px">14px</option>
+          <option value="16px">16px</option>
+          <option value="18px">18px</option>
+          <option value="20px">20px</option>
+          <option value="24px">24px</option>
+          <option value="28px">28px</option>
+          <option value="32px">32px</option>
+          <option value="36px">36px</option>
+        </select>
+
+        {/* Line Height */}
+        <select
+          onChange={(e) => {
+            if (e.target.value === 'unset') {
+              editor.chain().focus().unsetMark('textStyle').run();
+            } else {
+              editor.chain().focus().setMark('textStyle', { lineHeight: e.target.value }).run();
+            }
+          }}
+          className="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          title="Line Height"
+        >
+          <option value="unset">Line</option>
+          <option value="1">1.0</option>
+          <option value="1.15">1.15</option>
+          <option value="1.5">1.5</option>
+          <option value="2">2.0</option>
+          <option value="2.5">2.5</option>
+          <option value="3">3.0</option>
         </select>
 
         <div className="w-px h-6 bg-gray-300 mx-1"></div>
@@ -521,6 +589,14 @@ export default function WikiEditor({
           title="Quote"
         >
           <Quote className="w-4 h-4" />
+        </ToolbarButton>
+        
+        <ToolbarButton
+          onClick={() => editor.chain().focus().toggleTaskList().run()}
+          isActive={editor.isActive('taskList')}
+          title="Task List (Checkboxes)"
+        >
+          <CheckSquare className="w-4 h-4" />
         </ToolbarButton>
 
         <div className="w-px h-6 bg-gray-300 mx-1"></div>
@@ -633,6 +709,25 @@ export default function WikiEditor({
 
         <div className="flex-1"></div>
 
+        {/* Utility Tools */}
+        <ToolbarButton
+          onClick={() => setShowFindReplace(!showFindReplace)}
+          isActive={showFindReplace}
+          title="Find & Replace"
+        >
+          <Search className="w-4 h-4" />
+        </ToolbarButton>
+        
+        <ToolbarButton
+          onClick={() => setShowSpecialChars(!showSpecialChars)}
+          isActive={showSpecialChars}
+          title="Insert Special Characters"
+        >
+          <Omega className="w-4 h-4" />
+        </ToolbarButton>
+
+        <div className="w-px h-6 bg-gray-300 mx-1"></div>
+
         {/* Actions */}
         {onPreview && (
           <ToolbarButton
@@ -653,6 +748,74 @@ export default function WikiEditor({
           </ToolbarButton>
         )}
       </div>
+
+      {/* Find & Replace Modal */}
+      {showFindReplace && (
+        <div className="border-b border-gray-200 bg-gray-50 p-3 flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Find..."
+            value={findText}
+            onChange={(e) => setFindText(e.target.value)}
+            className="px-3 py-1 border border-gray-300 rounded text-sm flex-1"
+          />
+          <input
+            type="text"
+            placeholder="Replace..."
+            value={replaceText}
+            onChange={(e) => setReplaceText(e.target.value)}
+            className="px-3 py-1 border border-gray-300 rounded text-sm flex-1"
+          />
+          <button
+            onClick={() => {
+              if (findText && editor) {
+                const { from, to } = editor.state.selection;
+                editor.commands.insertContentAt({ from, to }, replaceText);
+                setFindText('');
+                setReplaceText('');
+              }
+            }}
+            className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+          >
+            Replace
+          </button>
+          <button
+            onClick={() => setShowFindReplace(false)}
+            className="px-2 py-1 text-gray-600 hover:text-gray-800"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Special Characters Popup */}
+      {showSpecialChars && (
+        <div className="border-b border-gray-200 bg-gray-50 p-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">Special Characters</span>
+            <button
+              onClick={() => setShowSpecialChars(false)}
+              className="text-gray-600 hover:text-gray-800"
+            >
+              X
+            </button>
+          </div>
+          <div className="grid grid-cols-12 gap-1">
+            {['©', '®', '™', '°', '±', '×', '÷', '≠', '≈', '≤', '≥', 'α', 'β', 'γ', 'δ', 'π', 'Σ', '∞', '∫', '√', '∂', '∆', '←', '→', '↑', '↓', '⇒', '⇔', '•', '◦', '▪', '▫', '¶', '§', '†', '‡', '‰', '‹', '›', '«', '»', '…', '–', '—'].map((char) => (
+              <button
+                key={char}
+                onClick={() => {
+                  editor?.commands.insertContent(char);
+                  setShowSpecialChars(false);
+                }}
+                className="p-2 border border-gray-300 rounded hover:bg-gray-100 text-center text-sm"
+              >
+                {char}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Editor Content */}
       <div className="p-4">
