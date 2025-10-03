@@ -99,7 +99,7 @@ export default async function EditWikiPage({ params }: PageProps) {
   const initialData = {
     id: page.id,
     title: page.title,
-    content: page.currentVersion?.content || null,
+    content: page.currentVersion?.contentJSON || null,
     status: page.status,
     tags: page.tags.map(t => t.tag.name),
     parentId: page.parentId || undefined,
