@@ -220,7 +220,7 @@ export default function VersionHistory({
           return (
             <div 
               key={version.id}
-              className={`flex items-center space-x-3 p-3 border rounded-lg transition-colors ${
+              className={`flex items-start space-x-3 p-3 border rounded-lg transition-colors ${
                 isViewed ? 'bg-green-50 border-green-200' : 
                 isSelected ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'
               }`}
@@ -229,24 +229,74 @@ export default function VersionHistory({
                 type="checkbox"
                 checked={isSelected}
                 onChange={(e) => handleVersionSelect(version.id, e.target.checked)}
-                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 mt-0.5"
               />
               
               <div className="flex-1">
-                <div className="flex items-center space-x-2">
-                  <span className="font-medium text-gray-900">
-                    #{versions.length - index}
-                  </span>
-                  {isCurrent && (
-                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
-                      Current
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium text-gray-900">
+                      #{versions.length - index}
                     </span>
-                  )}
-                  {version.isMinorEdit && (
-                    <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-                      Minor
-                    </span>
-                  )}
+                    {isCurrent && (
+                      <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
+                        Current
+                      </span>
+                    )}
+                    {version.isMinorEdit && (
+                      <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                        Minor
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center space-x-1">
+                    <button
+                      onClick={() => router.push(`/wiki/pages/${pageId}?version=${version.id}`)}
+                      className="p-1 text-gray-400 hover:text-blue-600"
+                      title="View this version"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    
+                    {!isCurrent && (
+                      <>
+                        <button
+                          onClick={() => {
+                            if (confirm('Are you sure you want to revert to this version? This will create a new version with the content from this point.')) {
+                              handleRevertToVersion(version.id);
+                            }
+                          }}
+                          disabled={reverting === version.id}
+                          className="p-1 text-gray-400 hover:text-orange-600 disabled:opacity-50"
+                          title="Revert to this version"
+                        >
+                          {reverting === version.id ? (
+                            <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <RotateCcw className="w-4 h-4" />
+                          )}
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            if (confirm('Are you sure you want to delete this version? This action cannot be undone.')) {
+                              handleDeleteVersion(version.id);
+                            }
+                          }}
+                          disabled={deleting === version.id}
+                          className="p-1 text-gray-400 hover:text-red-600 disabled:opacity-50"
+                          title="Delete this version"
+                        >
+                          {deleting === version.id ? (
+                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="text-sm text-gray-600 mt-1">
@@ -263,54 +313,6 @@ export default function VersionHistory({
                     <span>{version.createdBy.name}</span>
                   </div>
                 </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => router.push(`/wiki/pages/${pageId}?version=${version.id}`)}
-                  className="p-1 text-gray-400 hover:text-gray-600"
-                  title="View this version"
-                >
-                  <Eye className="w-4 h-4" />
-                </button>
-                
-                {!isCurrent && (
-                  <>
-                    <button
-                      onClick={() => {
-                        if (confirm('Are you sure you want to revert to this version? This will create a new version with the content from this point.')) {
-                          handleRevertToVersion(version.id);
-                        }
-                      }}
-                      disabled={reverting === version.id}
-                      className="p-1 text-gray-400 hover:text-orange-600 disabled:opacity-50"
-                      title="Revert to this version"
-                    >
-                      {reverting === version.id ? (
-                        <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <RotateCcw className="w-4 h-4" />
-                      )}
-                    </button>
-                    
-                    <button
-                      onClick={() => {
-                        if (confirm('Are you sure you want to delete this version? This action cannot be undone.')) {
-                          handleDeleteVersion(version.id);
-                        }
-                      }}
-                      disabled={deleting === version.id}
-                      className="p-1 text-gray-400 hover:text-red-600 disabled:opacity-50"
-                      title="Delete this version"
-                    >
-                      {deleting === version.id ? (
-                        <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <Trash2 className="w-4 h-4" />
-                      )}
-                    </button>
-                  </>
-                )}
               </div>
             </div>
           );
