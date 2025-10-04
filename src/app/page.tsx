@@ -73,13 +73,9 @@ export default async function Home() {
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <section className="card">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="h1">MWA Business Hub</h1>
-            <p className="text-gray-600 mt-1">Your central access point for all business systems and resources</p>
-          </div>
-        </div>
+      <section className="welcome-card">
+        <h2>Welcome to Your Workspace</h2>
+        <p>Your central hub for company resources, tools, and information. Everything you need to deliver exceptional service to our clients.</p>
       </section>
 
       {/* Marsden Wealth Apps Section - New addition */}
