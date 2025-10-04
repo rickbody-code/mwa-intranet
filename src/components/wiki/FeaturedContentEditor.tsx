@@ -1,69 +1,126 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Save, Plus, X, BookOpen } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-
-interface FeaturedItem {
-  id: string;
-  title: string;
-  description: string;
-  link: string;
-}
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import TextAlign from '@tiptap/extension-text-align';
+import Highlight from '@tiptap/extension-highlight';
+import Color from '@tiptap/extension-color';
+import { TextStyle } from '@tiptap/extension-text-style';
+import FontFamily from '@tiptap/extension-font-family';
+import Link from '@tiptap/extension-link';
+import Image from '@tiptap/extension-image';
+import { Table } from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
 
 export default function FeaturedContentEditor() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
-  const [introText, setIntroText] = useState(
-    "Welcome to the MWA Knowledge Base! Get started with these key pages:"
-  );
-  
-  const [featuredItems, setFeaturedItems] = useState<FeaturedItem[]>([
-    {
-      id: '1',
-      title: 'Getting Started',
-      description: 'Learn how to create and edit wiki pages',
-      link: '/wiki/create'
+  const [loading, setLoading] = useState(true);
+  const [introText, setIntroText] = useState("");
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+      Highlight.configure({ multicolor: true }),
+      Color,
+      TextStyle,
+      FontFamily,
+      Link.configure({
+        openOnClick: false,
+      }),
+      Image,
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
+    ],
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none min-h-[300px] max-w-none px-4 py-3',
+      },
     },
-    {
-      id: '2',
-      title: 'Browse All Pages',
-      description: 'Explore all available wiki content',
-      link: '/wiki'
-    }
-  ]);
+    immediatelyRender: false,
+  });
 
-  const addItem = () => {
-    const newItem: FeaturedItem = {
-      id: Date.now().toString(),
-      title: '',
-      description: '',
-      link: ''
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const response = await fetch('/api/wiki/settings/featured');
+        const data = await response.json();
+        
+        setIntroText(data.introText || "");
+        
+        if (editor && data.contentHTML) {
+          editor.commands.setContent(data.contentHTML);
+        }
+      } catch (error) {
+        console.error('Error loading featured content:', error);
+      } finally {
+        setLoading(false);
+      }
     };
-    setFeaturedItems([...featuredItems, newItem]);
-  };
 
-  const removeItem = (id: string) => {
-    setFeaturedItems(featuredItems.filter(item => item.id !== id));
-  };
-
-  const updateItem = (id: string, field: keyof FeaturedItem, value: string) => {
-    setFeaturedItems(featuredItems.map(item => 
-      item.id === id ? { ...item, [field]: value } : item
-    ));
-  };
+    fetchContent();
+  }, [editor]);
 
   const handleSave = async () => {
+    if (!editor) return;
+
     setSaving(true);
     
-    // For now, just show success and redirect back
-    // In a real implementation, you'd save to database/localStorage
-    setTimeout(() => {
-      setSaving(false);
-      alert('Featured content saved successfully!');
+    try {
+      const contentHTML = editor.getHTML();
+      
+      const response = await fetch('/api/wiki/settings/featured', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          introText,
+          contentHTML,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save');
+      }
+
       router.push('/wiki');
-    }, 1000);
+      router.refresh();
+    } catch (error) {
+      console.error('Error saving featured content:', error);
+      alert('Failed to save featured content. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg border shadow-sm p-8 text-center">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg border shadow-sm">
@@ -79,81 +136,13 @@ export default function FeaturedContentEditor() {
       </div>
 
       <div className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Featured Items</h2>
-          <button
-            onClick={addItem}
-            className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Add Item
-          </button>
+        <h2 className="text-lg font-semibold mb-4">Content (WYSIWYG)</h2>
+        <div className="border border-gray-300 rounded-md">
+          <EditorContent editor={editor} />
         </div>
-
-        <div className="space-y-4">
-          {featuredItems.map((item, index) => (
-            <div
-              key={item.id}
-              className="p-4 border border-gray-200 rounded-lg relative"
-            >
-              <button
-                onClick={() => removeItem(item.id)}
-                className="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                title="Remove item"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-8">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Title
-                  </label>
-                  <input
-                    type="text"
-                    value={item.title}
-                    onChange={(e) => updateItem(item.id, 'title', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., Getting Started Guide"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Link
-                  </label>
-                  <input
-                    type="text"
-                    value={item.link}
-                    onChange={(e) => updateItem(item.id, 'link', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="/wiki/pages/your-page-slug"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <input
-                    type="text"
-                    value={item.description}
-                    onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Brief description of what this page contains"
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {featuredItems.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
-              <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p>No featured items yet. Click "Add Item" to get started.</p>
-            </div>
-          )}
-        </div>
+        <p className="text-sm text-gray-500 mt-2">
+          Use the editor to format your featured content. You can add links, bold text, lists, and more.
+        </p>
       </div>
 
       <div className="p-6 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
@@ -169,7 +158,7 @@ export default function FeaturedContentEditor() {
           </button>
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || !editor}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
