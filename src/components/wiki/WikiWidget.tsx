@@ -10,7 +10,6 @@ import {
   TrendingUp, 
   Clock, 
   Users, 
-  FileText,
   Eye,
   Calendar
 } from "lucide-react";
@@ -100,10 +99,12 @@ export function WikiWidget() {
 
   if (loading) {
     return (
-      <div className="card">
-        <div className="flex items-center gap-2 mb-4">
-          <BookOpen className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-semibold">Wiki Knowledge Base</h3>
+      <div className="knowledge-base">
+        <div className="kb-header">
+          <div className="kb-title">
+            <BookOpen className="w-5 h-5" />
+            Wiki Knowledge Base
+          </div>
         </div>
         <div className="animate-pulse space-y-3">
           <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -115,36 +116,33 @@ export function WikiWidget() {
   }
 
   return (
-    <div className="card">
+    <div className="knowledge-base">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-semibold">Wiki Knowledge Base</h3>
+      <div className="kb-header">
+        <div className="kb-title">
+          <BookOpen className="w-5 h-5" />
+          Wiki Knowledge Base
         </div>
         {session && (
           <Link 
             href="/wiki/create"
-            className="flex items-center gap-1 px-2 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="new-page-btn"
           >
             <Plus className="w-3 h-3" />
-            New Page
+            New
           </Link>
         )}
       </div>
 
       {/* Search */}
       <div className="mb-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Search wiki pages..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
+        <input
+          type="text"
+          placeholder="Search wiki pages..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="search-box"
+        />
         
         {/* Search Results */}
         {(searchQuery.trim() && (isSearching || searchResults.length > 0)) && (
@@ -177,53 +175,33 @@ export function WikiWidget() {
         )}
       </div>
 
-      {/* Quick Stats */}
-      {stats && (
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-blue-50 p-3 rounded-md">
-            <div className="flex items-center gap-2 text-blue-600 mb-1">
-              <FileText className="w-4 h-4" />
-              <span className="text-xs font-medium">Pages</span>
-            </div>
-            <div className="text-lg font-semibold text-blue-900">{stats.totalPages}</div>
-          </div>
-          <div className="bg-green-50 p-3 rounded-md">
-            <div className="flex items-center gap-2 text-green-600 mb-1">
-              <Eye className="w-4 h-4" />
-              <span className="text-xs font-medium">Views</span>
-            </div>
-            <div className="text-lg font-semibold text-green-900">{stats.totalViews.toLocaleString()}</div>
-          </div>
-        </div>
-      )}
-
       {/* Popular & Recent Content */}
       {stats && (
         <div className="space-y-4">
           {/* Popular Pages */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-orange-600" />
-              <h4 className="text-sm font-semibold text-gray-700">Popular Pages</h4>
+          <div className="kb-section">
+            <div className="kb-section-title">
+              <TrendingUp className="w-4 h-4" />
+              Popular Pages
             </div>
-            <div className="space-y-2">
+            <div className="page-list">
               {stats.popularPages.slice(0, 3).map((page) => (
                 <Link
                   key={page.id}
                   href={page.safeHref || `/wiki/pages/${page.id}`}
-                  className="block p-2 rounded-md hover:bg-gray-50 transition-colors"
+                  className="page-item block"
                 >
-                  <div className="text-sm font-medium text-gray-900 truncate">
+                  <div className="page-title">
                     {page.title}
                   </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <div className="text-xs text-gray-500 truncate flex-1 mr-2">
+                  <div className="page-meta flex items-center justify-between">
+                    <span className="truncate flex-1 mr-2">
                       {page.summary || 'No summary available'}
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-gray-400">
+                    </span>
+                    <span className="flex items-center gap-1">
                       <Eye className="w-3 h-3" />
                       {page.viewCount}
-                    </div>
+                    </span>
                   </div>
                 </Link>
               ))}
@@ -231,29 +209,27 @@ export function WikiWidget() {
           </div>
 
           {/* Recent Pages */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="w-4 h-4 text-blue-600" />
-              <h4 className="text-sm font-semibold text-gray-700">Recently Updated</h4>
+          <div className="kb-section">
+            <div className="kb-section-title">
+              <Clock className="w-4 h-4" />
+              Recently Updated
             </div>
-            <div className="space-y-2">
+            <div className="page-list">
               {stats.recentPages.slice(0, 3).map((page) => (
                 <Link
                   key={page.id}
                   href={page.safeHref || `/wiki/pages/${page.id}`}
-                  className="block p-2 rounded-md hover:bg-gray-50 transition-colors"
+                  className="page-item block"
                 >
-                  <div className="text-sm font-medium text-gray-900 truncate">
+                  <div className="page-title">
                     {page.title}
                   </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <div className="text-xs text-gray-500">
-                      by {page.authorName || 'Unknown'}
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-gray-400">
+                  <div className="page-meta flex items-center justify-between">
+                    <span>by {page.authorName || 'Unknown'}</span>
+                    <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
                       {new Date(page.updatedAt).toLocaleDateString()}
-                    </div>
+                    </span>
                   </div>
                 </Link>
               ))}
@@ -261,15 +237,13 @@ export function WikiWidget() {
           </div>
 
           {/* Browse All Link */}
-          <div className="pt-3 border-t border-gray-200">
-            <Link
-              href="/wiki"
-              className="flex items-center justify-center gap-2 w-full py-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
-            >
-              <Users className="w-4 h-4" />
-              Browse All Wiki Pages
-            </Link>
-          </div>
+          <Link
+            href="/wiki"
+            className="browse-all"
+          >
+            <Users className="w-4 h-4" />
+            Browse All Wiki Pages
+          </Link>
         </div>
       )}
 
@@ -281,7 +255,8 @@ export function WikiWidget() {
           {session && (
             <Link
               href="/wiki/create"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+              className="new-page-btn"
+              style={{ display: 'inline-flex' }}
             >
               <Plus className="w-4 h-4" />
               Create First Page

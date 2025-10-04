@@ -260,19 +260,23 @@ body {
 }
 
 .new-page-btn {
-  background: #3b82f6;
+  background: #3f4f54;
   color: white;
   border: none;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  font-size: 0.8rem;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .new-page-btn:hover {
-  background: #2563eb;
+  background: #2d3a3f;
+  transform: translateY(-1px);
 }
 
 .search-box {

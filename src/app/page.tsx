@@ -81,18 +81,18 @@ export default async function Home() {
       {/* Marsden Wealth Apps Section - New addition */}
       <MarsdenApps apps={marsdenApps} />
 
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+      <div className="business-layout">
         {/* Main Links Section */}
-        <section className="xl:col-span-3 card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="h2">Business Systems & Resources</h2>
-            <span className="text-sm text-gray-500">{categories.length} categories</span>
+        <section className="business-systems">
+          <div className="section-header" style={{ marginBottom: '1.5rem' }}>
+            <div className="section-title">Business Systems & Resources</div>
+            <div style={{ color: '#64748b', fontSize: '0.875rem' }}>{categories.length} categories</div>
           </div>
           <HierarchicalLinks categories={categories} />
         </section>
 
         {/* Sidebar */}
-        <aside className="xl:col-span-1 space-y-6">
+        <aside>
           {/* Wiki Knowledge Base Widget */}
           <WikiWidget />
         </aside>
