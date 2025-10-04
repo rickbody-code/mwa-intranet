@@ -6,7 +6,7 @@ import { z } from "zod";
 
 const createPageSchema = z.object({
   title: z.string().min(1, "Title is required"),
-  content: z.object({}).passthrough(), // TipTap JSON content
+  content: z.object({}).passthrough().transform(val => val || { type: 'doc', content: [] }), // TipTap JSON content, provide default if null/undefined
   contentMarkdown: z.string().optional(),
   parentId: z.string().optional(),
   tags: z.array(z.string()).optional(),

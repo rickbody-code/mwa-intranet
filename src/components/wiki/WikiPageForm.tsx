@@ -338,8 +338,10 @@ export default function WikiPageForm({
                       type="button"
                       onClick={() => {
                         // Convert content to markdown before saving
-                        const markdown = convertToMarkdown(formData.content || {});
-                        handleSave(formData.content, markdown);
+                        // Handle empty content by providing minimal valid content
+                        const contentToSave = formData.content || { type: 'doc', content: [{ type: 'paragraph', content: [] }] };
+                        const markdown = convertToMarkdown(contentToSave);
+                        handleSave(contentToSave, markdown);
                       }}
                       disabled={isSaving || !formData.title.trim()}
                       className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"

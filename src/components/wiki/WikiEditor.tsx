@@ -58,7 +58,7 @@ import {
 
 // Markdown conversion function for the editor
 function convertToMarkdown(doc: any): string {
-  if (!doc || !doc.content) return '';
+  if (!doc || !doc.content || doc.content.length === 0) return '';
   
   return doc.content.map((node: any) => {
     switch (node.type) {
@@ -243,8 +243,10 @@ export default function WikiEditor({
     setIsSaving(true);
     try {
       const json = editor.getJSON();
-      const markdown = convertToMarkdown(editor.getJSON());
-      await onSave(json, markdown);
+      // Ensure we always have a valid document structure, even if empty
+      const contentToSave = json || { type: 'doc', content: [{ type: 'paragraph', content: [] }] };
+      const markdown = convertToMarkdown(contentToSave);
+      await onSave(contentToSave, markdown);
     } catch (error) {
       console.error('Save failed:', error);
     } finally {
