@@ -40,7 +40,12 @@ export function MarsdenApps({ apps }: { apps: MarsdenApp[] }) {
               <div className="app-icon">
                 <IconComponent className="w-6 h-6 text-white" />
               </div>
-              <div className="app-name">{app.name}</div>
+              <div>
+                <div className="app-name">{app.name}</div>
+                <p style={{ fontSize: '0.875rem', opacity: 0.9, marginTop: '0.5rem' }}>
+                  {app.description}
+                </p>
+              </div>
             </Link>
           );
         })}
