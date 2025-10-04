@@ -110,7 +110,7 @@ body {
 }
 
 .app-card {
-  background: linear-gradient(135deg, #9ca3af 0%, #6b7b82 50%, #3f4f54 100%);
+  background: linear-gradient(135deg, #577ba3 0%, #3d5f85 50%, #2d5a8c 100%);
   border-radius: 16px;
   padding: 1.25rem 1.5rem;
   cursor: pointer;
@@ -124,7 +124,7 @@ body {
 
 .app-card:hover {
   transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 8px 24px rgba(63, 79, 84, 0.4);
+  box-shadow: 0 8px 24px rgba(45, 90, 140, 0.4);
 }
 
 .app-icon {
