@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev -p 5000 -H 0.0.0.0",
     "build": "next build",
-    "start": "next start -p 5000 -H 0.0.0.0",
+    "start:local": "next start -p 5000 -H 0.0.0.0",
+    "start:azure": "npx next start -p $PORT -H 0.0.0.0",
+    "start": "npx next start -p $PORT -H 0.0.0.0",
     "postinstall": "npx prisma generate",
     "db:push": "npx prisma db push",
     "db:seed": "node --import tsx src/scripts/seed.ts",

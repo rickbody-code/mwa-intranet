@@ -4,6 +4,14 @@
 
 The MWA Intranet is an internal staff portal for Marsden Wealth Advisers built with Next.js 14. It provides secure access to business applications and resources through a modern web interface. The application features two main components: a Marsden Apps Hub for quick access to business systems like Xplan and Class, and a hierarchical link management system that organizes resources into categories, subcategories, and sub-subcategories. The system uses Microsoft Entra ID for single sign-on authentication and provides role-based access control for administrative functions.
 
+## Recent Changes
+
+### October 2025 - Azure Deployment Fixes
+- Fixed Azure build failures by adding `export const dynamic = 'force-dynamic'` to all 35 API routes
+- Updated startup validation to log warnings instead of blocking builds when environment variables are missing
+- Resolved TypeScript compilation issues with Prisma JSON types using `toInputJson()` helper
+- All API routes now properly configured for server-side rendering in production
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
