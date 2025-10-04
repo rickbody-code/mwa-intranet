@@ -130,7 +130,7 @@ body {
 .app-icon {
   width: 48px;
   height: 48px;
-  background: rgba(0, 0, 0, 0.15);
+  background: #3f4f54;
   border-radius: 10px;
   display: flex;
   align-items: center;
