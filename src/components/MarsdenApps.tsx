@@ -17,7 +17,7 @@ export function MarsdenApps({ apps }: { apps: MarsdenApp[] }) {
   const sortedApps = apps.sort((a, b) => a.order - b.order);
 
   return (
-    <section className="section">
+    <section className="card">
       <div className="section-header">
         <div>
           <div className="section-title">Marsden Wealth Apps</div>
