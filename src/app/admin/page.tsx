@@ -5,6 +5,7 @@ export const revalidate = 0;
 import { prisma } from "@/lib/prisma";
 import { HierarchicalLinksAdmin } from "@/components/HierarchicalLinksAdmin";
 import { MarsdenAppsAdmin } from "@/components/MarsdenAppsAdmin";
+import { WikiSectionsAdmin } from "@/components/WikiSectionsAdmin";
 
 // Type adapter to convert Prisma's null to undefined for component compatibility
 function adaptCategories(categories: any[]): any[] {
@@ -35,7 +36,7 @@ function adaptCategories(categories: any[]): any[] {
 }
 
 export default async function AdminPage() {
-  const [categoriesRaw, marsdenApps] = await Promise.all([
+  const [categoriesRaw, marsdenApps, wikiSections] = await Promise.all([
     prisma.linkCategory.findMany({
       include: {
         links: {
@@ -60,7 +61,8 @@ export default async function AdminPage() {
       },
       orderBy: [{ order: "asc" }, { name: "asc" }]
     }),
-    prisma.marsdenApp.findMany({ orderBy: { order: "asc" } })
+    prisma.marsdenApp.findMany({ orderBy: { order: "asc" } }),
+    prisma.wikiSection.findMany({ orderBy: { order: "asc" } })
   ]);
 
   // Adapt the categories to match component expectations
@@ -75,6 +77,15 @@ export default async function AdminPage() {
           Manage the featured Marsden Wealth applications that appear on the homepage
         </p>
         <MarsdenAppsAdmin initialApps={marsdenApps} />
+      </section>
+
+      {/* NEW: Wiki Sections Admin Section */}
+      <section className="card">
+        <h2 className="h2 mb-4">Admin · Manage Wiki Sections</h2>
+        <p className="text-gray-600 mb-6">
+          Manage the white card sections that appear on the Wiki Knowledge Base homepage
+        </p>
+        <WikiSectionsAdmin initialSections={wikiSections} />
       </section>
 
       {/* NEW: Hierarchical Links Admin Section */}
