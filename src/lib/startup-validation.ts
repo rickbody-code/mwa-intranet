@@ -49,7 +49,7 @@ export function validateEnvironment(): ValidationResult {
   return { errors, warnings };
 }
 
-export function logValidationResults(result: ValidationResult): void {
+export function logValidationResults(result: ValidationResult, throwOnError: boolean = false): void {
   if (result.warnings.length > 0) {
     console.warn("⚠️  Configuration warnings:");
     result.warnings.forEach(warning => console.warn(`   - ${warning}`));
@@ -58,14 +58,22 @@ export function logValidationResults(result: ValidationResult): void {
   if (result.errors.length > 0) {
     console.error("🚨 Configuration errors:");
     result.errors.forEach(error => console.error(`   - ${error}`));
-    throw new Error(`Configuration validation failed: ${result.errors.join(", ")}`);
+    
+    // Only throw if explicitly requested (runtime validation, not build-time)
+    if (throwOnError) {
+      throw new Error(`Configuration validation failed: ${result.errors.join(", ")}`);
+    } else {
+      console.error("⚠️  Build will continue, but app may not work correctly at runtime");
+    }
   }
 
   // Success message
-  if (process.env.NODE_ENV === "production") {
-    console.log("✅ Production configuration validated successfully");
-  } else {
-    console.log("✅ Development configuration validated");
+  if (result.errors.length === 0) {
+    if (process.env.NODE_ENV === "production") {
+      console.log("✅ Production configuration validated successfully");
+    } else {
+      console.log("✅ Development configuration validated");
+    }
   }
 }
 

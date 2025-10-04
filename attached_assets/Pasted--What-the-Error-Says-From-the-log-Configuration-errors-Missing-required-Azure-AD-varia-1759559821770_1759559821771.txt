@@ -1,0 +1,78 @@
+🔎 What the Error Says
+
+From the log:
+
+🚨 Configuration errors:
+   - Missing required Azure AD variables: AZURE_AD_CLIENT_ID, AZURE_AD_CLIENT_SECRET, AZURE_AD_TENANT_ID
+   - DATABASE_URL is required in production
+
+🚨 STARTUP VALIDATION FAILED: Error: Configuration validation failed: 
+Missing required Azure AD variables: AZURE_AD_CLIENT_ID, AZURE_AD_CLIENT_SECRET, AZURE_AD_TENANT_ID, 
+DATABASE_URL is required in production
+
+
+And then:
+
+> Build error occurred
+Error: Jest worker encountered 4 child process exceptions, exceeding retry limit
+
+🧾 What This Means
+
+Your Next.js app has a config validator (likely in src/lib/env.ts or similar).
+
+On startup, it checks that critical env vars exist.
+
+It found that AZURE_AD_CLIENT_ID, AZURE_AD_CLIENT_SECRET, AZURE_AD_TENANT_ID, and DATABASE_URL are missing in the build environment.
+
+Because those weren’t present, the validator threw an error, which killed the Next.js build process.
+
+That cascaded into the “Jest worker exceptions” message you saw, but the root cause is the missing env vars.
+
+✅ The Fix
+
+You need to set these environment variables in Azure App Service before deployment:
+
+AZURE_AD_CLIENT_ID → from your Azure AD App Registration (Application ID)
+
+AZURE_AD_CLIENT_SECRET → the client secret you created for that app
+
+AZURE_AD_TENANT_ID → your Azure tenant ID
+
+DATABASE_URL → full Postgres connection string, e.g.:
+
+postgresql://<username>:<password>@<servername>.postgres.database.azure.com:5432/<dbname>?sslmode=require
+
+📍 How to Set in Azure
+
+In the Azure Portal, open your App Service.
+
+Go to Settings → Configuration → Application Settings.
+
+Add each missing key and value:
+
+Name: AZURE_AD_CLIENT_ID | Value: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+Name: AZURE_AD_CLIENT_SECRET | Value: your-secret-here
+
+Name: AZURE_AD_TENANT_ID | Value: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+Name: DATABASE_URL | Value: your Postgres connection string
+
+Save and restart the App Service.
+
+⚠️ Important Detail
+
+In your screenshot earlier, some env vars are already set in Azure.
+
+The error means these 4 specifically weren’t set (or were set but left blank).
+
+Sometimes copy-pasting from Key Vault references (@Microsoft.KeyVault(...)) works in Azure, but if Key Vault isn’t linked, the app will see them as “undefined.” In that case, you either:
+
+Connect App Service to Key Vault properly, or
+
+Paste the raw values directly into the App Service config (at least to test).
+
+👉 So the exact issue: The app crashed because it couldn’t find the 4 required env vars during build.
+👉 The fix: Ensure those 4 variables are populated in App Service (direct values or via Key Vault).
+
+Would you like me to check your screenshot and tell you which of those 4 are actually missing vs which are present but pointing to Key Vault, so you know whether the problem is blank values or misconfigured Key Vault references?
