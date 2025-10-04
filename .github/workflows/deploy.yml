@@ -1,35 +1,35 @@
-name: Build and Deploy to Azure WebApp
+name: Build and Deploy to Azure
 
 on:
   push:
     branches:
-      - main   # deploy only when main branch is updated
+      - main
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
+          node-version: 20
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Next.js app
+      - name: Build app
         run: npm run build
 
-      - name: Archive production build
-        run: zip -r build.zip .next node_modules package.json prisma public
+      - name: Zip artifact
+        run: zip -r build.zip .next node_modules public package.json prisma
 
       - name: Deploy to Azure WebApp
         uses: azure/webapps-deploy@v2
         with:
           app-name: mwa-intranet
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: build.zip
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_CLIENTSECRET }}
