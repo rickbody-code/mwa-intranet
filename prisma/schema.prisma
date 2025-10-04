@@ -104,6 +104,19 @@ model MarsdenApp {
   updatedAt   DateTime @updatedAt
 }
 
+// Wiki Sections model - white card sections on wiki home
+model WikiSection {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  icon        String   // Lucide React icon name
+  linkText    String   // Text for the link (e.g., "Access Compliance →")
+  linkUrl     String   // URL the section links to
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 // Legacy models - keeping for backward compatibility
 model Announcement {
   id        String   @id @default(cuid())
