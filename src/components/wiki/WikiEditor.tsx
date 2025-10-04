@@ -56,60 +56,104 @@ import {
   Eye
 } from 'lucide-react';
 
-// Markdown conversion function for the editor
+// Markdown conversion function for the editor - handles all TipTap node types
 function convertToMarkdown(doc: any): string {
   if (!doc || !doc.content || doc.content.length === 0) return '';
   
-  return doc.content.map((node: any) => {
+  function extractText(node: any): string {
+    if (!node) return '';
+    
+    if (node.type === 'text') {
+      return node.text || '';
+    }
+    
+    if (node.type === 'hardBreak') {
+      return '\n';
+    }
+    
+    if (node.content && Array.isArray(node.content)) {
+      return node.content.map(extractText).join('');
+    }
+    
+    return '';
+  }
+  
+  function processNode(node: any, indent: string = ''): string {
+    if (!node) return '';
+    
     switch (node.type) {
       case 'heading':
         const level = '#'.repeat(node.attrs?.level || 1);
-        const text = node.content?.[0]?.text || '';
-        return `${level} ${text}\n\n`;
+        const headingText = extractText(node);
+        return `${level} ${headingText}\n\n`;
+        
       case 'paragraph':
-        const paragraphText = node.content?.map((inline: any) => {
-          if (inline.type === 'text') {
-            let text = inline.text || '';
-            if (inline.marks) {
-              inline.marks.forEach((mark: any) => {
-                switch (mark.type) {
-                  case 'bold':
-                    text = `**${text}**`;
-                    break;
-                  case 'italic':
-                    text = `*${text}*`;
-                    break;
-                  case 'code':
-                    text = `\`${text}\``;
-                    break;
-                }
-              });
-            }
-            return text;
-          }
-          return inline.text || '';
-        }).join('') || '';
-        return `${paragraphText}\n\n`;
+        const paragraphText = extractText(node);
+        return paragraphText ? `${paragraphText}\n\n` : '\n';
+        
       case 'bulletList':
-        return node.content?.map((item: any) => {
-          const itemText = item.content?.[0]?.content?.[0]?.text || '';
-          return `- ${itemText}`;
+        return (node.content || []).map((item: any) => {
+          const itemText = extractText(item);
+          return `${indent}- ${itemText}`;
         }).join('\n') + '\n\n';
+        
       case 'orderedList':
-        return node.content?.map((item: any, index: number) => {
-          const itemText = item.content?.[0]?.content?.[0]?.text || '';
-          return `${index + 1}. ${itemText}`;
+        return (node.content || []).map((item: any, index: number) => {
+          const itemText = extractText(item);
+          return `${indent}${index + 1}. ${itemText}`;
         }).join('\n') + '\n\n';
+        
+      case 'taskList':
+        return (node.content || []).map((item: any) => {
+          const checked = item.attrs?.checked ? '[x]' : '[ ]';
+          const itemText = extractText(item);
+          return `${indent}- ${checked} ${itemText}`;
+        }).join('\n') + '\n\n';
+        
       case 'blockquote':
-        const quoteText = node.content?.[0]?.content?.[0]?.text || '';
+        const quoteText = extractText(node);
         return `> ${quoteText}\n\n`;
+        
       case 'codeBlock':
-        const codeText = node.content?.[0]?.text || '';
-        return `\`\`\`\n${codeText}\n\`\`\`\n\n`;
+        const codeText = extractText(node);
+        const language = node.attrs?.language || '';
+        return `\`\`\`${language}\n${codeText}\n\`\`\`\n\n`;
+        
+      case 'table':
+        const rows = node.content || [];
+        const tableText = rows.map((row: any) => {
+          const cells = row.content || [];
+          return '| ' + cells.map((cell: any) => {
+            const cellText = extractText(cell).replace(/\n/g, ' ').trim();
+            return cellText || ' ';
+          }).join(' | ') + ' |';
+        }).join('\n');
+        return tableText + '\n\n';
+        
+      case 'horizontalRule':
+        return '---\n\n';
+        
+      case 'image':
+        const src = node.attrs?.src || '';
+        const alt = node.attrs?.alt || 'image';
+        return `![${alt}](${src})\n\n`;
+        
+      case 'hardBreak':
+        return '\n';
+        
+      case 'text':
+        return node.text || '';
+        
       default:
-        return '';
+        // For unknown types, try to extract text content recursively
+        if (node.content && Array.isArray(node.content)) {
+          return node.content.map((child: any) => processNode(child, indent)).join('');
+        }
+        return extractText(node);
     }
-  }).join('');
+  }
+  
+  return doc.content.map((node: any) => processNode(node)).join('');
 }
 
 interface WikiEditorProps {
