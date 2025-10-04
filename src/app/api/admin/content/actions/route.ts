@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { cleanupAttachmentBlobs } from "@/lib/storage-cleanup";
 import "@/lib/app-startup"; // Trigger startup validation
 
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
                 pageId: pageId,
                 actorId: user.id,
                 type: 'ARCHIVE',
-                data: { adminAction: true }
+                data: { adminAction: true } as Prisma.InputJsonValue
               }
             });
           }
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
                 pageId: pageId,
                 actorId: user.id,
                 type: 'DELETE',
-                data: { adminAction: true, destructive: true }
+                data: { adminAction: true, destructive: true } as Prisma.InputJsonValue
               }
             });
           }
@@ -123,7 +124,7 @@ export async function POST(request: NextRequest) {
                 blobsDeleted: cleanupResults.success,
                 blobsFailed: cleanupResults.failed,
                 failedBlobs: cleanupResults.results.filter(r => !r.success).map(r => r.blobKey)
-              }
+              } as Prisma.InputJsonValue
             }
           });
         }
@@ -146,7 +147,7 @@ export async function POST(request: NextRequest) {
                 pageId: pageId,
                 actorId: user.id,
                 type: 'PUBLISH',
-                data: { adminAction: true }
+                data: { adminAction: true } as Prisma.InputJsonValue
               }
             });
           }
@@ -175,7 +176,7 @@ export async function POST(request: NextRequest) {
               pageId: pageId,
               actorId: user.id,
               type: status === 'PUBLISHED' ? 'PUBLISH' : 'UPDATE',
-              data: { adminAction: true, newStatus: status }
+              data: { adminAction: true, newStatus: status } as Prisma.InputJsonValue
             }
           });
         }

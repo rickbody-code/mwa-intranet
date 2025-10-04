@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
               action: 'permission.created',
               targetUserId: userId,
               permissions: { canRead, canWrite, canAdmin }
-            }
+            } as Prisma.InputJsonValue
           }
         });
 
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
               action: 'permission.updated',
               permissionId,
               permissions: { canRead, canWrite, canAdmin }
-            }
+            } as Prisma.InputJsonValue
           }
         });
 
@@ -144,7 +145,7 @@ export async function POST(request: NextRequest) {
               destructive: true,
               pageTitle: permissionToDelete.page?.title,
               userName: permissionToDelete.user?.name
-            }
+            } as Prisma.InputJsonValue
           }
         });
 

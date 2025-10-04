@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
               action: 'user.role_updated',
               newRole: role,
               targetUser: updatedUser.email
-            }
+            } as Prisma.InputJsonValue
           }
         });
 
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
               action: 'user.created',
               newUserEmail: email,
               assignedRole: role || 'STAFF'
-            }
+            } as Prisma.InputJsonValue
           }
         });
 
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
                 action: 'user.deleted',
                 destructive: true,
                 deletedUserEmail: userToDelete.email
-              }
+              } as Prisma.InputJsonValue
             }
           });
 

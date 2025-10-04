@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 // Default wiki settings
 const DEFAULT_SETTINGS = {
@@ -125,7 +126,7 @@ export async function POST(request: NextRequest) {
           adminAction: true,
           action: 'settings.updated',
           settingsKeys: Object.keys(settings)
-        }
+        } as Prisma.InputJsonValue
       }
     });
 
@@ -178,7 +179,7 @@ export async function DELETE(request: NextRequest) {
           adminAction: true,
           action: 'settings.reset',
           settingKey: key
-        }
+        } as Prisma.InputJsonValue
       }
     });
 

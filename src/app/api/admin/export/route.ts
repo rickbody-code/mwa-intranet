@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
   try {
@@ -190,7 +191,7 @@ export async function GET(request: NextRequest) {
           action: 'wiki.export',
           exportType: type,
           recordCount: exportData.totalPages || exportData.totalUsers || exportData.totalActivities || 0
-        }
+        } as Prisma.InputJsonValue
       }
     });
 
