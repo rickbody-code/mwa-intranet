@@ -24,7 +24,8 @@ import {
   AlignRight,
   AlignJustify,
   CheckSquare,
-  Eraser
+  Eraser,
+  FileCode
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -49,6 +50,8 @@ export default function FeaturedContentEditor() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [introText, setIntroText] = useState("");
+  const [htmlMode, setHtmlMode] = useState(false);
+  const [htmlContent, setHtmlContent] = useState("");
 
   const editor = useEditor({
     extensions: [
@@ -111,6 +114,11 @@ export default function FeaturedContentEditor() {
     setSaving(true);
     
     try {
+      // If in HTML mode, update editor content from HTML first
+      if (htmlMode) {
+        editor.commands.setContent(htmlContent);
+      }
+      
       const contentHTML = editor.getHTML();
       
       const response = await fetch('/api/wiki/settings/featured', {
@@ -136,6 +144,20 @@ export default function FeaturedContentEditor() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const toggleHtmlMode = () => {
+    if (!editor) return;
+    
+    if (htmlMode) {
+      // Switching from HTML to WYSIWYG - update editor content
+      editor.commands.setContent(htmlContent);
+    } else {
+      // Switching from WYSIWYG to HTML - get current HTML
+      setHtmlContent(editor.getHTML());
+    }
+    
+    setHtmlMode(!htmlMode);
   };
 
   const ToolbarButton = ({ 
@@ -428,6 +450,17 @@ export default function FeaturedContentEditor() {
 
             <div className="w-px h-6 bg-gray-300 mx-1"></div>
 
+            {/* HTML Toggle */}
+            <ToolbarButton
+              onClick={toggleHtmlMode}
+              isActive={htmlMode}
+              title="Toggle HTML View"
+            >
+              <FileCode className="w-4 h-4" />
+            </ToolbarButton>
+
+            <div className="w-px h-6 bg-gray-300 mx-1"></div>
+
             {/* History */}
             <ToolbarButton
               onClick={() => editor.chain().focus().undo().run()}
@@ -447,7 +480,16 @@ export default function FeaturedContentEditor() {
           </div>
 
           {/* Editor Content */}
-          <EditorContent editor={editor} />
+          {htmlMode ? (
+            <textarea
+              value={htmlContent}
+              onChange={(e) => setHtmlContent(e.target.value)}
+              className="w-full min-h-[300px] px-4 py-3 font-mono text-sm focus:outline-none border-0"
+              placeholder="HTML content..."
+            />
+          ) : (
+            <EditorContent editor={editor} />
+          )}
         </div>
         <p className="text-sm text-gray-500 mt-2">
           Use the editor to format your featured content. You can add links, bold text, lists, and more.
