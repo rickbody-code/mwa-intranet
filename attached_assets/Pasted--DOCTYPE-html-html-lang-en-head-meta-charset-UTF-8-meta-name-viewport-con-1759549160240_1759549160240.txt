@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marsden Wealth Advisers - Staff Intranet</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #e5e7eb;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8c 100%);
+            color: white;
+            padding: 2rem 2rem 3rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .tagline {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            margin-top: 0.5rem;
+        }
+
+        .user-info {
+            text-align: right;
+            font-size: 0.9rem;
+            opacity: 0.95;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: -2rem auto 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .welcome-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .welcome-card h2 {
+            color: #1e3a5f;
+            margin-bottom: 0.75rem;
+            font-size: 1.6rem;
+        }
+
+        .welcome-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* Apps Section */
+        .section {
+            margin-bottom: 2.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .section-subtitle {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .app-card {
+            background: linear-gradient(135deg, #9ca3af 0%, #6b7b82 50%, #3f4f54 100%);
+            border-radius: 16px;
+            padding: 2rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            color: white;
+        }
+
+        .app-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 8px 24px rgba(63, 79, 84, 0.4);
+        }
+
+        .app-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .app-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        /* Business Systems Layout */
+        .business-layout {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+        }
+
+        .business-systems {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .category-list {
+            list-style: none;
+        }
+
+        .category-item {
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 0.5rem;
+            cursor: pointer;
+            color: #1e293b;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .category-header:hover {
+            background: #f8fafc;
+        }
+
+        .category-toggle {
+            color: #64748b;
+            font-size: 0.875rem;
+            transition: transform 0.2s;
+        }
+
+        .category-toggle.open {
+            transform: rotate(90deg);
+        }
+
+        .category-icon {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+
+        .subcategory-list {
+            list-style: none;
+            padding-left: 2.5rem;
+            padding-bottom: 0.5rem;
+            display: none;
+        }
+
+        .subcategory-list.show {
+            display: block;
+        }
+
+        .subcategory-item {
+            padding: 0.5rem 0;
+        }
+
+        .subcategory-link {
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .subcategory-link:hover {
+            text-decoration: underline;
+        }
+
+        .link-icon {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        /* Knowledge Base Sidebar */
+        .knowledge-base {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            height: fit-content;
+            position: sticky;
+            top: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .kb-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .kb-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1e3a5f;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .new-page-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .new-page-btn:hover {
+            background: #2563eb;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .kb-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-box {
+            padding: 0.75rem;
+            background: #f8fafc;
+            border-radius: 6px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .stat-pages { color: #3b82f6; }
+        .stat-views { color: #10b981; }
+
+        .kb-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .kb-section-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .page-list {
+            list-style: none;
+        }
+
+        .page-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .page-item:last-child {
+            border-bottom: none;
+        }
+
+        .page-title {
+            color: #1e293b;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+
+        .page-meta {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .browse-all {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-top: 1rem;
+        }
+
+        .browse-all:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 1024px) {
+            .business-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .knowledge-base {
+                position: static;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .apps-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div class="logo-section">
+                    <div>
+                        <div class="logo">Marsden Wealth Advisers</div>
+                        <div class="tagline">Staff Intranet Portal</div>
+                    </div>
+                </div>
+                <div class="user-info">
+                    Welcome back!<br>
+                    Saturday, October 4, 2025
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="welcome-card">
+            <h2>Welcome to Your Workspace</h2>
+            <p>Your central hub for company resources, tools, and information. Everything you need to deliver exceptional service to our clients.</p>
+        </div>
+
+        <!-- Marsden Wealth Apps -->
+        <div class="section">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Marsden Wealth Apps</div>
+                    <div class="section-subtitle">One-tap internal tools</div>
+                </div>
+                <div style="color: #64748b; font-size: 0.875rem;">8 apps</div>
+            </div>
+            <div class="apps-grid">
+                <div class="app-card">
+                    <div class="app-icon">📊</div>
+                    <div class="app-name">Client Dashboard</div>
+                </div>
+                <div class="app-card">
+                    <div class="app-icon">💼</div>
+                    <div class="app-name">Portfolio Manager</div>
+                </div>
+                <div class="app-card">
+                    <div class="app-icon">📈</div>
+                    <div class="app-name">Market Analytics</div>
+                </div>
+                <div class="app-card">
+                    <div class="app-icon">📋</div>
+                    <div class="app-name">Compliance Tracker</div>
+                </div>
+                <div class="app-card">
+                    <div class="app-icon">🔍</div>
+                    <div class="app-name">Research Hub</div>
+                </div>
+                <div class="app-card">
+                    <div class="app-icon">📅</div>
+                    <div class="app-name">Meeting Scheduler</div>
+                </div>
+                <div class="app-card">
+                    <div class="app-icon">💰</div>
+                    <div class="app-name">Fee Calculator</div>
+                </div>
+                <div class="app-card">
+                    <div class="app-icon">📄</div>
+                    <div class="app-name">Document Generator</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Business Systems & Knowledge Base Layout -->
+        <div class="business-layout">
+            <!-- Business Systems & Resources -->
+            <div class="business-systems">
+                <div class="section-header" style="margin-bottom: 1.5rem;">
+                    <div class="section-title">Business Systems & Resources</div>
+                    <div style="color: #64748b; font-size: 0.875rem;">12 categories</div>
+                </div>
+
+                <ul class="category-list">
+                    <li class="category-item">
+                        <div class="category-header" onclick="toggleCategory(this)">
+                            <span class="category-toggle">▶</span>
+                            <span class="category-icon">📁</span>
+                            <span>MorningStar / AdviserLogic</span>
+                        </div>
+                        <ul class="subcategory-list">
+                            <li class="subcategory-item">
+                                <a href="#" class="subcategory-link">
+                                    <span class="link-icon">🔗</span>
+                                    <span>Morningstar Academy</span>
+                                </a>
+                            </li>
+                            <li class="subcategory-item">
+                                <a href="#" class="subcategory-link">
+                                    <span class="link-icon">🔗</span>
+                                    <span>AdviserLogic | Financial Planning Software</span>
+                                </a>
+                            </li>
+                            <li class="subcategory-item">
+                                <a href="#" class="subcategory-link">
+                                    <span class="link-icon">🔗</span>
+                                    <span>Adviser Logic Onboarding</span>
+                                </a>
+                            </li>
+                            <li class="subcategory-item">
+                                <a href="#" class="subcategory-link">
+                                    <span class="link-icon">🔗</span>
+                                    <span>Morningstar Adviser Research Centre</span>
+                                </a>
+                            </li>
+                            <li class="subcategory-item">
+                                <a href="#" class="subcategory-link">
+                                    <span class="link-icon">🔗</span>
+                                    <span>Morningstar Investor Research</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="category-item">
+                        <div class="category-header" onclick="toggleCategory(this)">
+                            <span class="category-toggle">▶</span>
+                            <span class="category-icon">🤖</span>
+                            <span>AI</span>
+                        </div>
+                        <ul class="subcategory-list">
+                            <li class="subcategory-item">
+                                <a href="#" class="subcategory-link">
+                                    <span class="link-icon">🔗</span>
+                                    <span>AI Tools & Training</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="category-item">
+                        <div class="category-header" onclick="toggleCategory(this)">
+                            <span class="category-toggle">▶</span>
+                            <span class="category-icon">📚</span>
+                            <span>Financial Planning Course</span>
+                        </div>
+                        <ul class="subcategory-list">
+                            <li class="subcategory-item">
+                                <a href="#" class="subcategory-link">
+                                    <span class="link-icon">🔗</span>
+                                    <span>Course Materials</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="category-item">
+                        <div class="category-header" onclick="toggleCategory(this)">
+                            <span class="category-toggle">▶</span>
+                            <span class="category-icon">💡</span>
+                            <span>Knowledge Topics</span>
+                        </div>
+                        <ul class="subcategory-list">
+                            <li class="subcategory-item">
+                                <a href="#" class="subcategory-link">
+                                    <span class="link-icon">🔗</span>
+                                    <span>Industry Knowledge Base</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="category-item">
+                        <div class="category-header" onclick="toggleCategory(this)">
+                            <span class="category-toggle">▶</span>
+                            <span class="category-icon">🌐</span>
+                            <span>Website</span>
+                        </div>
+                        <ul class="subcategory-list">
+                            <li class="subcategory-item">
+                                <a href="#" class="subcategory-link">
+                                    <span class="link-icon">🔗</span>
+                                    <span>MWA Website Admin</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="category-item">
+                        <div class="category-header" onclick="toggleCategory(this)">
+                            <span class="category-toggle">▶</span>
+                            <span class="category-icon">📊</span>
+                            <span>PY Resources</span>
+                        </div>
+                        <ul class="subcategory-list">
+                            <li class="subcategory-item">
+                                <a href="#" class="subcategory-link">
+                                    <span class="link-icon">🔗</span>
+                                    <span>Prior Year Resources</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="category-item">
+                        <div class="category-header" onclick="toggleCategory(this)">
+                            <span class="category-toggle">▶</span>
+                            <span class="category-icon">📦</span>
+                            <span>Resources</span>
+                        </div>
+                        <ul class="subcategory-list">
+                            <li class="subcategory-item">
+                                <a href="#" class="subcategory-link">
+                                    <span class="link-icon">🔗</span>
+                                    <span>Templates & Forms</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="category-item">
+                        <div class="category-header" onclick="toggleCategory(this)">
+                            <span class="category-toggle">▶</span>
+                            <span class="category-icon">⚙️</span>
+                            <span>MWA Applications</span>
+                        </div>
+                        <ul class="subcategory-list">
+                            <li class="subcategory-item">
+                                <a href="#" class="subcategory-link">
+                                    <span class="link-icon">🔗</span>
+                                    <span>Internal Applications</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="category-item">
+                        <div class="category-header" onclick="toggleCategory(this)">
+                            <span class="category-toggle">▶</span>
+                            <span class="category-icon">🏛️</span>
+                            <span>CPAL</span>
+                        </div>
+                        <ul class="subcategory-list">
+                            <li class="subcategory-item">
+                                <a href="#" class="subcategory-link">
+                                    <span class="link-icon">🔗</span>
+                                    <span>CPAL Resources</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="category-item">
+                        <div class="category-header" onclick="toggleCategory(this)">
+                            <span class="category-toggle">▶</span>
+                            <span class="category-icon">🇺🇸</span>
+                            <span>US Information</span>
+                        </div>
+                        <ul class="subcategory-list">
+                            <li class="subcategory-item">
+                                <a href="#" class="subcategory-link">
+                                    <span class="link-icon">🔗</span>
+                                    <span>US Market Data</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="category-item">
+                        <div class="category-header" onclick="toggleCategory(this)">
+                            <span class="category-toggle">▶</span>
+                            <span class="category-icon">🔐</span>
+                            <span>Third Party Authorities</span>
+                        </div>
+                        <ul class="subcategory-list">
+                            <li class="subcategory-item">
+                                <a href="#" class="subcategory-link">
+                                    <span class="link-icon">🔗</span>
+                                    <span>Regulatory Links</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="category-item">
+                        <div class="category-header" onclick="toggleCategory(this)">
+                            <span class="category-toggle">▶</span>
+                            <span class="category-icon">🔍</span>
+                            <span>Competitor Websites</span>
+                        </div>
+                        <ul class="subcategory-list">
+                            <li class="subcategory-item">
+                                <a href="#" class="subcategory-link">
+                                    <span class="link-icon">🔗</span>
+                                    <span>Competitor Analysis</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="category-item">
+                        <div class="category-header" onclick="toggleCategory(this)">
+                            <span class="category-toggle">▶</span>
+                            <span class="category-icon">💹</span>
+                            <span>Investments</span>
+                        </div>
+                        <ul class="subcategory-list">
+                            <li class="subcategory-item">
+                                <a href="#" class="subcategory-link">
+                                    <span class="link-icon">🔗</span>
+                                    <span>Investment Resources</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Wiki Knowledge Base -->
+            <div class="knowledge-base">
+                <div class="kb-header">
+                    <div class="kb-title">
+                        <span>📚</span>
+                        <span>Wiki Knowledge Base</span>
+                    </div>
+                    <button class="new-page-btn">New Page</button>
+                </div>
+
+                <input type="text" class="search-box" placeholder="Search wiki pages...">
+
+                <div class="kb-stats">
+                    <div class="stat-box">
+                        <div class="stat-label">
+                            <span>📄</span>
+                            <span>Pages</span>
+                        </div>
+                        <div class="stat-value stat-pages">7</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">
+                            <span>👁️</span>
+                            <span>Views</span>
+                        </div>
+                        <div class="stat-value stat-views">0</div>
+                    </div>
+                </div>
+
+                <div class="kb-section">
+                    <div class="kb-section-title">
+                        <span>🔥</span>
+                        <span>Popular Pages</span>
+                    </div>
+                    <ul class="page-list">
+                        <li class="page-item">
+                            <div class="page-title">Sample Page</div>
+                            <div class="page-meta">by Rick Body • 04/10/2025</div>
+                        </li>
+                        <li class="page-item">
+                            <div class="page-title">Practice Management</div>
+                            <div class="page-meta">by Rick Body • 04/10/2025</div>
+                        </li>
+                        <li class="page-item">
+                            <div class="page-title">Technical & Strategies</div>
+                            <div class="page-meta">by Rick Body • 04/10/2025</div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="kb-section">
+                    <div class="kb-section-title">
+                        <span>🕐</span>
+                        <span>Recently Updated</span>
+                    </div>
+                    <ul class="page-list">
+                        <li class="page-item">
+                            <div class="page-title">Sample Page</div>
+                            <div class="page-meta">by Rick Body • 04/10/2025</div>
+                        </li>
+                        <li class="page-item">
+                            <div class="page-title">Practice Management</div>
+                            <div class="page-meta">by Rick Body • 04/10/2025</div>
+                        </li>
+                        <li class="page-item">
+                            <div class="page-title">Technical & Strategies</div>
+                            <div class="page-meta">by Rick Body • 04/10/2025</div>
+                        </li>
+                    </ul>
+                </div>
+
+                <a href="#" class="browse-all">
+                    <span>👥</span>
+                    <span>Browse All Wiki Pages</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleCategory(element) {
+            const toggle = element.querySelector('.category-toggle');
+            const subcategoryList = element.nextElementSibling;
+            
+            toggle.classList.toggle('open');
+            subcategoryList.classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

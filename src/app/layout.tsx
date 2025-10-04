@@ -14,13 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Providers>
           <Nav />
-          <main className="container mt-6 mb-24">{children}</main>
-          <footer className="border-t py-8 mt-10">
-            <div className="container text-sm text-gray-500 flex flex-wrap items-center gap-2">
-              <span>© {new Date().getFullYear()} Marsden Wealth Advisers · Internal</span>
-              <span className="badge">Starter</span>
-            </div>
-          </footer>
+          <main className="mwa-container">{children}</main>
         </Providers>
       </body>
     </html>
