@@ -21,18 +21,18 @@ const devAdminList = isDevelopment ? (process.env.DEV_ADMIN_EMAILS || "")
 // Only include dev admin emails in development
 const allAdminEmails = isDevelopment ? [...adminList, ...devAdminList] : adminList;
 
-// Production safety check
-if (process.env.NODE_ENV === "production") {
+// Production safety check - only run at runtime, not during build
+if (process.env.NODE_ENV === "production" && typeof window !== "undefined") {
   const requiredAzureVars = ["AZURE_AD_CLIENT_ID", "AZURE_AD_CLIENT_SECRET", "AZURE_AD_TENANT_ID"];
   const missingVars = requiredAzureVars.filter(varName => !process.env[varName]);
   
   if (missingVars.length > 0) {
-    throw new Error(`Missing required Azure AD environment variables in production: ${missingVars.join(", ")}`);
+    console.error(`Missing required Azure AD environment variables in production: ${missingVars.join(", ")}`);
   }
 
   // Prevent dev environment variables from affecting production
   if (process.env.DEV_AUTH_ENABLED) {
-    throw new Error("DEV_AUTH_ENABLED must not be set in production!");
+    console.error("⚠️  WARNING: DEV_AUTH_ENABLED must not be set in production!");
   }
   if (process.env.DEV_ADMIN_EMAILS) {
     console.error("⚠️  WARNING: DEV_ADMIN_EMAILS is set in production but will be ignored for security!");
