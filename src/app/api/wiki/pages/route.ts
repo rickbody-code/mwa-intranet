@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { toInputJson } from "@/lib/prisma-json";
 import { z } from "zod";
 
 const createPageSchema = z.object({
@@ -248,7 +249,7 @@ export async function POST(request: NextRequest) {
         data: {
           pageId: page.id,
           title: validatedData.title,
-          contentJSON: validatedData.content as Prisma.InputJsonValue,
+          contentJSON: toInputJson(validatedData.content),
           contentMarkdown: validatedData.contentMarkdown || "",
           changeNote: validatedData.changeNote || "Initial version",
           createdById: user.id,

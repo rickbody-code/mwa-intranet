@@ -42,7 +42,7 @@ async function getWikiPage(id: string, versionId?: string, userRole?: string, us
                   some: {
                     OR: [
                       { userId: userId, canRead: true },
-                      { role: userRole, canRead: true }
+                      { role: userRole as any, canRead: true }
                     ]
                   }
                 }
@@ -59,6 +59,12 @@ async function getWikiPage(id: string, versionId?: string, userRole?: string, us
             contentType: true,
             uploadedBy: { select: { name: true } },
             createdAt: true
+          }
+        },
+        _count: {
+          select: {
+            views: true,
+            versions: true
           }
         }
       }
@@ -96,7 +102,28 @@ async function getWikiPage(id: string, versionId?: string, userRole?: string, us
 
 export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
   const session = await getServerSession(authOptions);
-  const page = await getWikiPage(params.id, searchParams.version, session?.user?.role, session?.user?.id);
+  
+  if (!session?.user?.email) {
+    return {
+      title: 'Access Denied | MWA Wiki',
+      description: 'Please sign in to view this page.'
+    };
+  }
+
+  const { prisma } = await import('@/lib/prisma');
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { id: true, role: true }
+  });
+
+  if (!user) {
+    return {
+      title: 'Access Denied | MWA Wiki',
+      description: 'User not found.'
+    };
+  }
+
+  const page = await getWikiPage(params.id, searchParams.version, user.role, user.id);
   
   if (!page) {
     return {
@@ -228,7 +255,7 @@ export default async function WikiPageView({ params, searchParams }: PageProps) 
                   <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <p className="text-yellow-800 text-sm">
                       You are viewing a historical version of this page from{' '}
-                      {new Date(page.version?.createdAt || page.createdAt).toLocaleString()}.{' '}
+                      {new Date(page.currentVersion?.createdAt || page.createdAt).toLocaleString()}.{' '}
                       <Link 
                         href={`/wiki/pages/${params.id}`}
                         className="font-medium underline hover:no-underline"

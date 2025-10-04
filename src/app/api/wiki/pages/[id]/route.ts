@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageVersion, Prisma } from "@prisma/client";
+import { toInputJson } from "@/lib/prisma-json";
 import { z } from "zod";
 
 const updatePageSchema = z.object({
@@ -202,7 +203,7 @@ export async function PUT(
           data: {
             pageId: params.id,
             title: validatedData.title || page.title,
-            contentJSON: (validatedData.content || {}) as Prisma.InputJsonValue,
+            contentJSON: toInputJson(validatedData.content),
             contentMarkdown: validatedData.contentMarkdown || "",
             changeNote: validatedData.changeNote || "Updated content",
             isMinorEdit: validatedData.isMinorEdit,

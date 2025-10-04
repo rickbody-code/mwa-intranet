@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { toInputJson } from '@/lib/prisma-json';
 
 // POST /api/wiki/pages/[id]/versions/revert
 export async function POST(
@@ -98,7 +99,7 @@ export async function POST(
         data: {
           pageId: page.id,
           title: targetVersion.title,
-          contentJSON: targetVersion.contentJSON as Prisma.InputJsonValue,
+          contentJSON: toInputJson(targetVersion.contentJSON),
           contentMarkdown: targetVersion.contentMarkdown,
           changeNote: changeNote || `Reverted to version from ${targetVersion.createdAt.toISOString()}`,
           createdById: dbUser.id,

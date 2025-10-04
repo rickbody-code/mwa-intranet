@@ -68,7 +68,7 @@ interface WikiPageFormProps {
     id?: string;
     title?: string;
     content?: any;
-    status?: 'DRAFT' | 'PUBLISHED';
+    status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
     tags?: string[];
     parentId?: string;
   };
