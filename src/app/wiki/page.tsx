@@ -4,7 +4,6 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { 
-  BookOpen, 
   Plus, 
   Search, 
   Tag
@@ -113,17 +112,8 @@ export default async function WikiBrowsePage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <BookOpen className="w-8 h-8 text-blue-600" />
-            Wiki Knowledge Base
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Browse and discover all wiki content
-          </p>
-        </div>
+      {/* Header - Just New Page button */}
+      <div className="flex items-center justify-end mb-8">
         <Link
           href="/wiki/create"
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
@@ -131,6 +121,11 @@ export default async function WikiBrowsePage() {
           <Plus className="w-4 h-4" />
           New Page
         </Link>
+      </div>
+
+      {/* Featured Content Section */}
+      <div className="mb-8">
+        <WikiFeaturedContent isAdmin={user.role === 'ADMIN'} />
       </div>
 
       {/* Search Section - Split into two halves */}
@@ -152,11 +147,6 @@ export default async function WikiBrowsePage() {
           </h2>
           <WikiTagSearch tags={availableTags} />
         </div>
-      </div>
-
-      {/* Featured Content Section */}
-      <div className="mb-8">
-        <WikiFeaturedContent isAdmin={user.role === 'ADMIN'} />
       </div>
 
       {/* Collapsible Pages List */}
