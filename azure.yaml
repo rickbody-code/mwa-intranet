@@ -1,0 +1,5 @@
+version: 1.0.0
+build:
+  command: npm install && npm run build
+run:
+  command: npm start
