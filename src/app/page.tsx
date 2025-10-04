@@ -1,4 +1,4 @@
-// SAMPLE REFINED HOME PAGE - For review before applying
+// src/app/page.tsx (Updated with Marsden Apps)
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -71,35 +71,31 @@ export default async function Home() {
   const categories = adaptCategories(categoriesRaw);
 
   return (
-    <div className="space-y-8 pb-8">
-      {/* Welcome Section - Refined with gradient and better typography */}
-      <section className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl shadow-sm border border-slate-200/60 p-8">
-        <div className="max-w-4xl">
-          <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">
-            MWA Business Hub
-          </h1>
-          <p className="text-slate-600 mt-3 text-lg leading-relaxed">
-            Your central access point for all business systems and resources
-          </p>
+    <div className="space-y-6">
+      {/* Welcome Section */}
+      <section className="card">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="h1">MWA Business Hub</h1>
+            <p className="text-gray-600 mt-1">Your central access point for all business systems and resources</p>
+          </div>
         </div>
       </section>
 
-      {/* Marsden Wealth Apps Section */}
+      {/* Marsden Wealth Apps Section - New addition */}
       <MarsdenApps apps={marsdenApps} />
 
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-        {/* Main Links Section - Enhanced card styling */}
-        <section className="xl:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200/60 p-6 hover:shadow-md transition-shadow duration-200">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-            <h2 className="text-xl font-semibold text-slate-900">Business Systems & Resources</h2>
-            <span className="text-sm font-medium text-slate-500 bg-slate-50 px-3 py-1 rounded-full">
-              {categories.length} categories
-            </span>
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        {/* Main Links Section */}
+        <section className="xl:col-span-3 card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="h2">Business Systems & Resources</h2>
+            <span className="text-sm text-gray-500">{categories.length} categories</span>
           </div>
           <HierarchicalLinks categories={categories} />
         </section>
 
-        {/* Sidebar - Refined spacing */}
+        {/* Sidebar */}
         <aside className="xl:col-span-1 space-y-6">
           {/* Wiki Knowledge Base Widget */}
           <WikiWidget />
