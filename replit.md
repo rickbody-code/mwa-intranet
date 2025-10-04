@@ -10,7 +10,7 @@ The MWA Intranet is an internal staff portal for Marsden Wealth Advisers built w
 - Fixed Azure build failures by adding `export const dynamic = 'force-dynamic'` to all 35 API routes
 - Updated startup validation to log warnings instead of blocking builds when environment variables are missing
 - Resolved TypeScript compilation issues with Prisma JSON types using `toInputJson()` helper
-- All API routes now properly configured for server-side rendering in production
+- All API routes properly configured for server-side rendering in production
 - Build verified successful with zero TypeScript errors
 - Azure deployment pipeline configured and validated
 
