@@ -111,17 +111,24 @@ export default async function WikiBrowsePage() {
   }));
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header - Just New Page button */}
-      <div className="flex items-center justify-end mb-8">
-        <Link
-          href="/wiki/create"
-          className="new-page-btn"
-        >
-          <Plus className="w-4 h-4" />
-          New Page
-        </Link>
-      </div>
+    <>
+      {/* Welcome Header Section */}
+      <section className="welcome-card" style={{ marginBottom: '2rem' }}>
+        <h2>Marsden Wealth Advisers Knowledge Base</h2>
+        <p>Your central hub for compliance, processes, tools, and best practices to deliver exceptional financial advice.</p>
+      </section>
+
+      <div className="container mx-auto px-4 py-8">
+        {/* Header - Just New Page button */}
+        <div className="flex items-center justify-end mb-8">
+          <Link
+            href="/wiki/create"
+            className="new-page-btn"
+          >
+            <Plus className="w-4 h-4" />
+            New Page
+          </Link>
+        </div>
 
       {/* Featured Content Section */}
       <div className="mb-8">
@@ -152,5 +159,6 @@ export default async function WikiBrowsePage() {
       {/* Collapsible Pages List */}
       <CollapsiblePagesList pages={transformedPages} />
     </div>
+    </>
   );
 }
