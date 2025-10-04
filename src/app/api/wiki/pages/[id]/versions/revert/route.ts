@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 // POST /api/wiki/pages/[id]/versions/revert
 export async function POST(
@@ -97,7 +98,7 @@ export async function POST(
         data: {
           pageId: page.id,
           title: targetVersion.title,
-          contentJSON: targetVersion.contentJSON,
+          contentJSON: targetVersion.contentJSON as Prisma.InputJsonValue,
           contentMarkdown: targetVersion.contentMarkdown,
           changeNote: changeNote || `Reverted to version from ${targetVersion.createdAt.toISOString()}`,
           createdById: dbUser.id,
@@ -131,7 +132,7 @@ export async function POST(
             fromVersionId: page.currentVersionId,
             toVersionId: versionId,
             description: `Reverted page to version from ${targetVersion.createdAt.toISOString()}`
-          }
+          } as Prisma.InputJsonValue
         }
       });
 

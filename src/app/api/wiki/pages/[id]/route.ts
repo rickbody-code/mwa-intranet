@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { PageVersion } from "@prisma/client";
+import { PageVersion, Prisma } from "@prisma/client";
 import { z } from "zod";
 
 const updatePageSchema = z.object({
@@ -202,7 +202,7 @@ export async function PUT(
           data: {
             pageId: params.id,
             title: validatedData.title || page.title,
-            contentJSON: validatedData.content || {},
+            contentJSON: (validatedData.content || {}) as Prisma.InputJsonValue,
             contentMarkdown: validatedData.contentMarkdown || "",
             changeNote: validatedData.changeNote || "Updated content",
             isMinorEdit: validatedData.isMinorEdit,
@@ -277,7 +277,7 @@ export async function PUT(
           data: { 
             changes: Object.keys(validatedData),
             isMinorEdit: validatedData.isMinorEdit 
-          }
+          } as Prisma.InputJsonValue
         }
       });
 
@@ -370,7 +370,7 @@ export async function DELETE(
             pageId: params.id,
             actorId: user.id,
             type: "DELETE",
-            data: { pageId: params.id, title: page.title, permanent: true }
+            data: { pageId: params.id, title: page.title, permanent: true } as Prisma.InputJsonValue
           }
         });
 
@@ -397,7 +397,7 @@ export async function DELETE(
           pageId: params.id,
           actorId: user.id,
           type: "ARCHIVE",
-          data: { title: page.title }
+          data: { title: page.title } as Prisma.InputJsonValue
         }
       });
 
