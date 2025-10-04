@@ -4,7 +4,6 @@ export const revalidate = 0;
 
 import { prisma } from "@/lib/prisma";
 import { HierarchicalLinks } from "@/components/HierarchicalLinks";
-import { Search } from "@/components/Search";
 import { MarsdenApps } from "@/components/MarsdenApps";
 import { WikiWidget } from "@/components/wiki/WikiWidget";
 
@@ -73,12 +72,6 @@ export default async function Home() {
 
   return (
     <div className="space-y-6">
-      {/* Test Version Indicator */}
-      <div className="bg-yellow-200 border-2 border-yellow-400 p-4 rounded-lg">
-        <h2 className="font-bold text-yellow-800">HOMEPAGE - HIERARCHICAL LINKS + MARSDEN APPS VERSION LOADED</h2>
-        <p className="text-yellow-700">If you see this yellow box, the new homepage with hierarchical links AND Marsden Apps is active.</p>
-      </div>
-
       {/* Welcome Section */}
       <section className="card">
         <div className="flex items-center justify-between mb-4">
@@ -106,57 +99,6 @@ export default async function Home() {
         <aside className="xl:col-span-1 space-y-6">
           {/* Wiki Knowledge Base Widget */}
           <WikiWidget />
-          
-          <div className="card">
-            <h2 className="h2 mb-3">Search</h2>
-            <Search />
-          </div>
-          
-          {/* Quick Stats - Updated to include apps */}
-          <div className="card">
-            <h3 className="text-lg font-semibold mb-3">Quick Stats</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Marsden Apps:</span>
-                <span className="font-medium">{marsdenApps.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Categories:</span>
-                <span className="font-medium">{categories.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total Links:</span>
-                <span className="font-medium">
-                  {categories.reduce((total: number, cat: any) => 
-                    total + cat.links.length + 
-                    cat.subCategories.reduce((subTotal: number, subCat: any) => 
-                      subTotal + subCat.links.length + 
-                      subCat.subSubCategories.reduce((subSubTotal: number, subSubCat: any) => 
-                        subSubTotal + subSubCat.links.length, 0), 0), 0
-                  )}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* System Status */}
-          <div className="card">
-            <h3 className="text-lg font-semibold mb-3">System Status</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-gray-600">All systems operational</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="text-gray-600">Links organized</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <span className="text-gray-600">Marsden Apps ready</span>
-              </div>
-            </div>
-          </div>
         </aside>
       </div>
     </div>
