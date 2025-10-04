@@ -12,6 +12,7 @@ import WikiSearch from "@/components/wiki/WikiSearch";
 import WikiTagSearch from "@/components/wiki/WikiTagSearch";
 import WikiFeaturedContent from "@/components/wiki/WikiFeaturedContent";
 import CollapsiblePagesList from "@/components/wiki/CollapsiblePagesList";
+import { WikiSections } from "@/components/WikiSections";
 
 export default async function WikiBrowsePage() {
   const session = await getServerSession(authOptions);
@@ -110,6 +111,11 @@ export default async function WikiBrowsePage() {
     pageCount: tag.pages.length
   }));
 
+  // Get wiki sections
+  const wikiSections = await prisma.wikiSection.findMany({
+    orderBy: { order: 'asc' }
+  });
+
   return (
     <>
       {/* Welcome Header Section */}
@@ -119,6 +125,8 @@ export default async function WikiBrowsePage() {
       </section>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Wiki Sections */}
+        <WikiSections sections={wikiSections} />
         {/* Header - Just New Page button */}
         <div className="flex items-center justify-end mb-8">
           <Link
