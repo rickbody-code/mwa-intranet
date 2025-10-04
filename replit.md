@@ -29,7 +29,8 @@ Preferred communication style: Simple, everyday language.
 - **ORM**: Prisma for database schema management and migrations
 - **Schema Design**: Hierarchical structure supporting three-level link organization
 - **Key Models**: 
-  - MarsdenApp for featured business applications
+  - MarsdenApp for featured business applications (blue gradient cards on homepage)
+  - WikiSection for knowledge base sections (white cards on wiki homepage)
   - LinkCategory, LinkSubCategory, LinkSubSubCategory for hierarchical organization
   - User model with role-based permissions
   - Legacy models for announcements and staff directory
