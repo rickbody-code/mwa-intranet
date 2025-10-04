@@ -102,8 +102,7 @@ export function WikiWidget() {
       <div className="knowledge-base">
         <div className="kb-header">
           <div className="kb-title">
-            <BookOpen className="w-5 h-5" />
-            Wiki Knowledge Base
+            Knowledge Base
           </div>
         </div>
         <div className="animate-pulse space-y-3">
@@ -120,8 +119,7 @@ export function WikiWidget() {
       {/* Header */}
       <div className="kb-header">
         <div className="kb-title">
-          <BookOpen className="w-5 h-5" />
-          Wiki Knowledge Base
+          Knowledge Base
         </div>
         {session && (
           <Link 
