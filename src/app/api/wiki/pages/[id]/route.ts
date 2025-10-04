@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { PageVersion } from "@prisma/client";
 import { z } from "zod";
 
 const updatePageSchema = z.object({
@@ -113,7 +114,7 @@ export async function GET(
       }
     }
 
-    let versions = [];
+    let versions: any[] = [];
     if (includeHistory) {
       versions = await prisma.pageVersion.findMany({
         where: { pageId: params.id },
