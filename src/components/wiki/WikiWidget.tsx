@@ -101,9 +101,9 @@ export function WikiWidget() {
     return (
       <div className="knowledge-base">
         <div className="kb-header">
-          <div className="kb-title">
+          <Link href="/wiki" className="kb-title" style={{ textDecoration: 'none' }}>
             Knowledge Base
-          </div>
+          </Link>
         </div>
         <div className="animate-pulse space-y-3">
           <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -118,9 +118,9 @@ export function WikiWidget() {
     <div className="knowledge-base">
       {/* Header */}
       <div className="kb-header">
-        <div className="kb-title">
+        <Link href="/wiki" className="kb-title" style={{ textDecoration: 'none' }}>
           Knowledge Base
-        </div>
+        </Link>
         {session && (
           <Link 
             href="/wiki/create"
