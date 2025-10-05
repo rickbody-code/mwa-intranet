@@ -3,8 +3,8 @@ name: Deploy Next.js app to Azure App Service
 on:
   push:
     branches:
-      - main   # deploy automatically on push to main
-  workflow_dispatch:   # allows manual run from GitHub Actions tab
+      - main
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -14,20 +14,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          cd src
+          npm ci
 
-      - name: Build Next.js app
-        run: npm run build
+      - name: Build project
+        run: |
+          cd src
+          npm run build
 
-      - name: Zip build for deployment
-        run: zip -r build.zip .next public package.json node_modules prisma
+      - name: Prepare artifact for Azure
+        run: |
+          cd src
+          zip -r ../build.zip .next public package.json node_modules prisma
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
