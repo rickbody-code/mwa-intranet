@@ -14,23 +14,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
 
-      - name: Install dependencies
-        working-directory: src
+      - name: Install all dependencies
         run: npm ci
 
-      - name: Build project
-        working-directory: src
+      - name: Build Next.js app
         run: npm run build
 
-      - name: Zip build for deployment
-        working-directory: src
-        run: zip -r ../build.zip .next public package.json node_modules prisma
+      - name: Prepare production bundle
+        run: |
+          npm ci --omit=dev
+          zip -r build.zip .next public prisma package.json node_modules next.config.mjs
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
