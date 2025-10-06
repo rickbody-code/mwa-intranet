@@ -6,7 +6,7 @@ The MWA Intranet is an internal staff portal for Marsden Wealth Advisers built w
 
 ## Recent Changes
 
-### October 4, 2025 - Azure Deployment Successfully Configured
+### October 6, 2025 - Azure Deployment Successfully Configured
 - Fixed Azure build failures by adding export const dynamic = 'force-dynamic' to all 35 API routes
 - Updated startup validation to log warnings instead of blocking builds when environment variables are missing
 - Resolved TypeScript compilation issues with Prisma JSON types using toInputJson() helper
