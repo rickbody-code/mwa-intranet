@@ -438,12 +438,6 @@ export function HierarchicalLinksAdmin({ initialData }: { initialData: LinkCateg
 
   return (
     <div className="space-y-6">
-      {/* Test Version Indicator */}
-      <div className="bg-yellow-200 border-2 border-yellow-400 p-4 rounded-lg">
-        <h2 className="font-bold text-yellow-800">EDIT VERSION LOADED</h2>
-        <p className="text-yellow-700">If you can see this yellow box, the new component is working.</p>
-      </div>
-
       {/* Add Category Form */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
