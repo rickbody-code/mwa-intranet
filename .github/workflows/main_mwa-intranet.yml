@@ -64,6 +64,7 @@ jobs:
     needs: build
     permissions:
       contents: read
+      id-token: write
 
     steps:
       # Step 8: Download built artifact
@@ -72,6 +73,18 @@ jobs:
         with:
           name: node-app
 
-      # Step 9: Deploy to Azure App Service using publish profile
+      # Step 9: Login to Azure
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_9DAA38CE938B40DDACBEF5E586AA213D }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_584F1250D45A48ACB771A9E5D0BEDE22 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_190E921A167A4C30A5F6337280BCA24A }}
+
+      # Step 10: Deploy to Azure App Service using publish profile
       - name: Deploy to Azure Web App
-        uses: azure/
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: mwa-intranet
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          package: node-app.zip
