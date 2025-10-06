@@ -22,12 +22,22 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '20.x'
+          cache: 'npm'
 
-      - name: npm install, build, and test
+      - name: Install dependencies
+        run: npm ci
+
+      # 👇 Prisma generation and schema sync (mirrors manual SSH steps)
+      - name: Prepare Prisma client
         run: |
-          npm install
-          npm run build --if-present
-          npm run test --if-present
+          npm rebuild @prisma/client
+          npx prisma generate
+          npx prisma db push
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Build Next.js app
+        run: npm run build --if-present
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -47,7 +57,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-app
-      
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -61,6 +71,3 @@ jobs:
           app-name: mwa-intranet   # <-- must match the App Service name in Azure
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
           package: .
-
-
-          
