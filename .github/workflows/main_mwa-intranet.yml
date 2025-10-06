@@ -1,3 +1,10 @@
+# ================================================================
+#   GitHub Action: Build and Deploy Next.js App to Azure App Service
+# ================================================================
+# This workflow builds the app, syncs Prisma schema, and deploys
+# to the Azure Web App "mwa-intranet" using the publish profile.
+# ================================================================
+
 name: Build and deploy Node.js app to Azure Web App - mwa-intranet
 
 on:
@@ -9,21 +16,26 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read # required for actions/checkout
 
     steps:
+      # Step 1: Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Step 2: Setup Node.js 20 and cache dependencies
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
 
+      # Step 3: Clean install dependencies
       - name: Install dependencies
         run: npm ci
 
-      # 👇 Match manual SSH steps that made Prisma work
+      # Step 4: Rebuild Prisma client and push schema (mirrors SSH steps)
       - name: Prepare Prisma client
         run: |
           npm rebuild @prisma/client
@@ -32,41 +44,34 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
+      # Step 5: Build Next.js app
       - name: Build Next.js app
         run: npm run build
 
-      - name: Package app for deployment
+      # Step 6: Package build for deployment
+      - name: Package app
         run: zip -r node-app.zip .next public package.json node_modules prisma next.config.mjs
 
+      # Step 7: Upload artifact for deploy step
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: node-app
           path: node-app.zip
 
-    deploy:
-      runs-on: ubuntu-latest
-      needs: build
-      permissions:
-        id-token: write #This is required for requesting the JWT
-        contents: read #This is required for actions/checkout
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
 
     steps:
+      # Step 8: Download built artifact
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: node-app
 
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_9DAA38CE938B40DDACBEF5E586AA213D }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_584F1250D45A48ACB771A9E5D0BEDE22 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_190E921A167A4C30A5F6337280BCA24A }}
-
+      # Step 9: Deploy to Azure App Service using publish profile
       - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: mwa-intranet
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
-          package: node-app.zip
+        uses: azure/
