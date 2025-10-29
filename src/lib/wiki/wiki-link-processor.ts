@@ -102,12 +102,28 @@ export async function processWikiLinks(
         url: `/wiki/pages/${existingPage.slug}`
       });
     } else {
+      // Fetch parent page to get its path for building hierarchical path
+      const parentPage = await tx.page.findUnique({
+        where: { id: parentPageId },
+        select: { path: true }
+      });
+      
+      if (!parentPage) {
+        throw new Error(`Parent page ${parentPageId} not found`);
+      }
+      
+      // Generate unique slug
+      const uniqueSlug = await generateUniqueSlug(tx, slug);
+      
+      // Build hierarchical path: parent's path + unique slug
+      const hierarchicalPath = `${parentPage.path}/${uniqueSlug}`;
+      
       // Create new child page as DRAFT
       const newPage = await tx.page.create({
         data: {
           title,
-          slug: await generateUniqueSlug(tx, slug),
-          path: `/${slug}`,
+          slug: uniqueSlug,
+          path: hierarchicalPath,
           parentId: parentPageId,
           status: 'DRAFT',
           summary: `Auto-created from wiki link`,
