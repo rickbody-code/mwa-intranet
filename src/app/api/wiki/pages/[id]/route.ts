@@ -252,15 +252,10 @@ export async function PUT(
         updateData.currentVersionId = newVersion.id;
       }
 
-      const updatedPage = await tx.page.update({
+      // Update the page (will fetch complete page with tags later)
+      await tx.page.update({
         where: { id: params.id },
-        data: updateData,
-        include: {
-          createdBy: { select: { name: true, email: true } },
-          updatedBy: { select: { name: true, email: true } },
-          currentVersion: true,
-          tags: { include: { tag: true } }
-        }
+        data: updateData
       });
 
       // Handle tags if provided

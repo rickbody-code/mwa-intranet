@@ -1,0 +1,71 @@
+Build Error
+Failed to compile
+
+Next.js (14.2.5) is outdated (learn more)
+./src/app/api/wiki/pages/[id]/route.ts
+Error: 
+  × the name `updatedPage` is defined multiple times
+     ╭─[/home/runner/workspace/src/app/api/wiki/pages/[id]/route.ts:252:1]
+ 252 │         updateData.currentVersionId = newVersion.id;
+ 253 │       }
+ 254 │ 
+ 255 │       const updatedPage = await tx.page.update({
+     ·             ─────┬─────
+     ·                  ╰── previous definition of `updatedPage` here
+ 256 │         where: { id: params.id },
+ 257 │         data: updateData,
+ 258 │         include: {
+ 259 │           createdBy: { select: { name: true, email: true } },
+ 260 │           updatedBy: { select: { name: true, email: true } },
+ 261 │           currentVersion: true,
+ 262 │           tags: { include: { tag: true } }
+ 263 │         }
+ 264 │       });
+ 265 │ 
+ 266 │       // Handle tags if provided
+ 267 │       if (validatedData.tags !== undefined) {
+ 268 │         // Remove existing tags
+ 269 │         await tx.pageTag.deleteMany({
+ 270 │           where: { pageId: params.id }
+ 271 │         });
+ 272 │ 
+ 273 │         // Add new tags
+ 274 │         for (const tagName of validatedData.tags) {
+ 275 │           const tag = await tx.tag.upsert({
+ 276 │             where: { name: tagName },
+ 277 │             update: {},
+ 278 │             create: { name: tagName }
+ 279 │           });
+ 280 │ 
+ 281 │           await tx.pageTag.create({
+ 282 │             data: {
+ 283 │               pageId: params.id,
+ 284 │               tagId: tag.id
+ 285 │             }
+ 286 │           });
+ 287 │         }
+ 288 │       }
+ 289 │ 
+ 290 │       // Log activity
+ 291 │       await tx.activityLog.create({
+ 292 │         data: {
+ 293 │           pageId: params.id,
+ 294 │           versionId: newVersion?.id,
+ 295 │           actorId: user.id,
+ 296 │           type: "UPDATE",
+ 297 │           data: { 
+ 298 │             changes: Object.keys(validatedData),
+ 299 │             isMinorEdit: validatedData.isMinorEdit 
+ 300 │           } as Prisma.InputJsonValue
+ 301 │         }
+ 302 │       });
+ 303 │ 
+ 304 │       // Fetch and return page with updated tags
+ 305 │       const updatedPage = await tx.page.findUnique({
+     ·             ─────┬─────
+     ·                  ╰── `updatedPage` redefined here
+ 306 │         where: { id: params.id },
+ 307 │         include: {
+ 308 │           createdBy: { select: { name: true, email: true } },
+     ╰────
+This error occurred during the build process and can only be dismissed by fixing the error.
