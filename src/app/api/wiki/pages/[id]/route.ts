@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { PageVersion, Prisma } from "@prisma/client";
 import { toInputJson } from "@/lib/prisma-json";
 import { z } from "zod";
+import { processWikiLinks } from "@/lib/wiki/wiki-link-processor";
 
 const updatePageSchema = z.object({
   title: z.string().min(1).optional(),
@@ -198,6 +199,22 @@ export async function PUT(
     // Create new version and update page in transaction
     const result = await prisma.$transaction(async (tx) => {
       let newVersion = null;
+      let wikiLinkProcessingResult = null;
+      
+      // Process wiki links if content is provided
+      if (validatedData.content && validatedData.contentMarkdown) {
+        wikiLinkProcessingResult = await processWikiLinks({
+          content: validatedData.content,
+          contentMarkdown: validatedData.contentMarkdown,
+          parentPageId: params.id,
+          userId: user.id,
+          tx
+        });
+        
+        // Use processed content (with wiki links converted to real links)
+        validatedData.content = wikiLinkProcessingResult.processedContent;
+        validatedData.contentMarkdown = wikiLinkProcessingResult.processedMarkdown;
+      }
       
       // Create new version if content changed
       if (validatedData.content || validatedData.contentMarkdown) {
@@ -285,7 +302,7 @@ export async function PUT(
       });
 
       // Fetch and return page with updated tags
-      return await tx.page.findUnique({
+      const updatedPage = await tx.page.findUnique({
         where: { id: params.id },
         include: {
           createdBy: { select: { name: true, email: true } },
@@ -294,6 +311,14 @@ export async function PUT(
           tags: { include: { tag: true } }
         }
       });
+      
+      return {
+        page: updatedPage,
+        wikiLinksProcessed: wikiLinkProcessingResult ? {
+          createdPages: wikiLinkProcessingResult.createdPages,
+          count: wikiLinkProcessingResult.createdPages.length
+        } : null
+      };
     });
 
     return NextResponse.json(result);

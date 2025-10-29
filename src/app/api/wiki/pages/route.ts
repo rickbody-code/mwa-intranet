@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { toInputJson } from "@/lib/prisma-json";
 import { z } from "zod";
+import { processWikiLinks } from "@/lib/wiki/wiki-link-processor";
 
 const createPageSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -246,6 +247,22 @@ export async function POST(request: NextRequest) {
         }
       });
 
+      // Process wiki links if content is provided
+      let wikiLinkProcessingResult = null;
+      if (validatedData.content && validatedData.contentMarkdown) {
+        wikiLinkProcessingResult = await processWikiLinks({
+          content: validatedData.content,
+          contentMarkdown: validatedData.contentMarkdown,
+          parentPageId: page.id,
+          userId: user.id,
+          tx
+        });
+        
+        // Use processed content (with wiki links converted to real links)
+        validatedData.content = wikiLinkProcessingResult.processedContent;
+        validatedData.contentMarkdown = wikiLinkProcessingResult.processedMarkdown;
+      }
+
       // Create initial version
       const version = await tx.pageVersion.create({
         data: {
@@ -299,7 +316,7 @@ export async function POST(request: NextRequest) {
       });
 
       // Fetch and return page with updated tags
-      return await tx.page.findUnique({
+      const createdPage = await tx.page.findUnique({
         where: { id: page.id },
         include: {
           createdBy: { select: { name: true, email: true } },
@@ -308,6 +325,14 @@ export async function POST(request: NextRequest) {
           tags: { include: { tag: true } }
         }
       });
+      
+      return {
+        page: createdPage,
+        wikiLinksProcessed: wikiLinkProcessingResult ? {
+          createdPages: wikiLinkProcessingResult.createdPages,
+          count: wikiLinkProcessingResult.createdPages.length
+        } : null
+      };
     });
 
     return NextResponse.json(result, { status: 201 });
