@@ -191,8 +191,17 @@ export default function WikiPageForm({
 
         const result = await response.json();
         
+        // Handle response structure (wiki link processing returns {page, wikiLinksProcessed})
+        const savedPage = result.page || result;
+        
+        // Show info about auto-created wiki-linked pages
+        if (result.wikiLinksProcessed && result.wikiLinksProcessed.count > 0) {
+          const pageNames = result.wikiLinksProcessed.createdPages.map((p: any) => p.title).join(', ');
+          alert(`Created ${result.wikiLinksProcessed.count} new child page(s): ${pageNames}`);
+        }
+        
         // Redirect to the page after saving
-        router.push(`/wiki/pages/${result.slug || result.id}`);
+        router.push(`/wiki/pages/${savedPage.slug || savedPage.id}`);
       }
     } catch (error) {
       console.error('Save failed:', error);
